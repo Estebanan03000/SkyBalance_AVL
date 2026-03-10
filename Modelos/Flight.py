@@ -31,7 +31,6 @@ class Flight:
         self._passengers = passengers
         self._promotion = promotion
         self._alert = alert
-        self._height = height
         self._parent = None
         self._leftChild = None
         self._rightChild = None
@@ -63,9 +62,6 @@ class Flight:
     def getAlert(self):
         return self._alert
 
-    def getHeight(self):
-        return self._height
-    
     def getParent(self):
         return self._parent
     
@@ -101,9 +97,6 @@ class Flight:
 
     def setAlert(self, alert):
         self._alert = alert
-
-    def setHeight(self, height):
-        self._height = height
 
     def setParent(self, parent):
         self._parent = parent
