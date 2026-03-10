@@ -13,7 +13,6 @@ class Flight:
         _passengers (int): Number of passengers on the flight.
         _promotion (float): Active promotion discount or offer.
         _alert (bool): Flag indicating if there are any alerts for this flight.
-        _height (int): Height of this node in the AVL tree (used for balancing).
         _parent (Flight): Reference to the parent node in the AVL tree.
         _leftChild (Flight): Reference to the left child node in the AVL tree.
         _rightChild (Flight): Reference to the right child node in the AVL tree.
