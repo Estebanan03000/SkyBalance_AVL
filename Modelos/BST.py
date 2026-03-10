@@ -247,6 +247,28 @@ class BST:
             nodeCase = 3
         return nodeCase
     
+    # Método que permite calcular la altura de un nodo
+    def getHeightNode(self, node):
+        if node is None:
+            return -1
+        else:
+            return self.__getHeightNode(node)
+
+    # Cálculo recursivo de la altura de un nodo
+    def __getHeightNode(self, node):
+        # si es None se debe retornar -1 para equilibrar el +1 de su padre
+        if node is None:
+            return -1
+        else:
+            # se verifica altura por hijo izquierdo
+            leftHeight = self.__getHeightNode(node.getLeftChild())
+            # se verifica altura por hijo derecho
+            rightHeight = self.__getHeightNode(node.getRightChild())
+            # se obtiene el mayor valor de las alturas calculadas
+            maxHeight = max(leftHeight, rightHeight)
+            # se incrementa en 1 al retornar al padre para representar la arista que los une
+            return maxHeight + 1
+    
     # Método para dibujar el árbol en forma de árbol
     def print_tree(self):
         if self.root is None:
