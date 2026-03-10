@@ -1,4 +1,26 @@
-class Vuelo:
+class Flight:
+    """
+    Flight class representing a flight node in an AVL tree structure.
+    This class encapsulates all flight-related information and contains tree node properties
+    for integration into an AVL (Adelson-Velsky and Landis) balanced binary search tree.
+    Attributes:
+        _id (int): Unique identifier for the flight.
+        _origin (str): Departure airport or city.
+        _destiny (str): Destination airport or city.
+        _departureTime (datetime): Scheduled departure time.
+        _basePrice (float): Base price of the flight ticket.
+        _finalPrice (float): Final price after promotions or adjustments.
+        _passengers (int): Number of passengers on the flight.
+        _promotion (float): Active promotion discount or offer.
+        _alert (bool): Flag indicating if there are any alerts for this flight.
+        _height (int): Height of this node in the AVL tree (used for balancing).
+        _parent (Flight): Reference to the parent node in the AVL tree.
+        _leftChild (Flight): Reference to the left child node in the AVL tree.
+        _rightChild (Flight): Reference to the right child node in the AVL tree.
+    Methods:
+        Getters: Retrieve values for all flight attributes and tree node references.
+        Setters: Modify values for all flight attributes and tree node references.
+    """
     def __init__(self, id, origin, destiny, departureTime, basePrice, finalPrice, passengers, promotion, alert, height):
         self._id = id
         self._origin = origin
