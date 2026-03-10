@@ -21,7 +21,7 @@ class Flight:
         Getters: Retrieve values for all flight attributes and tree node references.
         Setters: Modify values for all flight attributes and tree node references.
     """
-    def __init__(self, id, origin, destiny, departureTime, basePrice, finalPrice, passengers, promotion, alert, height):
+    def __init__(self, id, origin, destiny, departureTime, basePrice, finalPrice, passengers, promotion, alert):
         self._id = id
         self._origin = origin
         self._destiny = destiny
