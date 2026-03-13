@@ -34,7 +34,7 @@ class Flight:
         self._leftChild = None
         self._rightChild = None
 
-    def getId(self):
+    def getValue(self):
         return self._id
 
     def getOrigin(self):
@@ -70,7 +70,7 @@ class Flight:
     def getRightChild(self):
         return self._rightChild
     
-    def setId(self, id):
+    def setValue(self, id):
         self._id = id
 
     def setOrigin(self, origin):

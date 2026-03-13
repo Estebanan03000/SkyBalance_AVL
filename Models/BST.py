@@ -185,10 +185,10 @@ class BST:
 
     # Método para eliminar
     def delete(self, value):
-        if self.root is None:
+        if self._root is None:
             print("El árbol está vacío.")
         else:
-            node = self.__search(self.root, value)
+            node = self.__search(self._root, value)
             if node is None:
                 print(f"El valor {value} no se encuentra en el árbol.")
             else:
