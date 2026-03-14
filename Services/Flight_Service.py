@@ -1,6 +1,6 @@
 from Models.Flight import Flight
 from Models.AVL import AVL
-
+from Models.Stack import Stack
 
 class Flight_Service:
     """
@@ -21,9 +21,10 @@ class Flight_Service:
 
     def __init__(self):
         """
-        Initializes the Flight_Service with an empty AVL tree.
+        Initializes the Flight_Service with an empty AVL tree and an empty Stack to undo operations
         """
         self._tree = AVL()
+        self._history = Stack()
 
     # CREATE
     def create_flight(self, flight: Flight):
@@ -38,6 +39,7 @@ class Flight_Service:
             The Flight object to be inserted into the tree.
         """
         self._tree.insert(flight)
+        self._history.push(("delete", flight.getValue()))
 
     # READ (single flight)
     def get_flight(self, flight_id):
@@ -155,6 +157,8 @@ class Flight_Service:
 
         if "passengers" in kwargs:
             flight.setPassengers(kwargs["passengers"])
+        
+        self._history.push(("update", flight_id))
 
     # DELETE
     def delete_flight(self, flight_id):
@@ -177,3 +181,21 @@ class Flight_Service:
                 raise Exception("Flight not found")
 
         self._tree.delete(flight_id)
+        self._history.push(("insert", flight))
+
+def undo(self):
+        if self._history.is_empty():
+            print("No hay operaciones para deshacer")
+            return
+
+        action = self._history.pop()
+
+        if action[0] == "delete":
+            self._tree.delete(action[1])
+
+        elif action[0] == "insert":
+            self._tree.insert(action[1])
+
+        elif action[0] == "update":
+            flight = self.get_flight(action[1])
+            flight.setFinalPrice(action[2])

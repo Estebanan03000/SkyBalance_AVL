@@ -1,4 +1,4 @@
-from Modelos.Flight import Flight
+from Models.Flight import Flight
 
 class BST:
     def __init__(self):

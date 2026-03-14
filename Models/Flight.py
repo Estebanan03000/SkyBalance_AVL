@@ -36,9 +36,6 @@ class Flight:
 
     def getValue(self):
         return self._id
-    
-    def getValue(self):
-        return self._id
 
     def getOrigin(self):
         return self._origin
