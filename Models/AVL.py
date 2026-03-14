@@ -1,6 +1,7 @@
 from Models.BST import BST
 
 
+
 class AVL(BST):
     def __init__(self):
         self._root = None

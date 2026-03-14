@@ -1,3 +1,5 @@
+from Modelos.Flight import Flight
+
 class BST:
     def __init__(self):
         self._root = None
@@ -13,10 +15,10 @@ class BST:
     # cuando si hay raiz se procede a insertar llamando a la función privada con la raiz del árbol y el nodo a insertar
     def insert(self, node):
         # verificar si no hay raiz para asignar el nuevo como raiz
-        if self.root is None:
-            self.root = node
+        if self._root is None:
+            self._root = node
         else:
-            self.__insert(self.root, node)
+            self.__insert(self._root, node)
 
     # Método recursivo para insertar un nodo cuando se tiene raiz en el árbol
     def __insert(self, currentRoot, node):
@@ -51,10 +53,10 @@ class BST:
     # debe seguir la lógica de las reglas de un BST
     def search(self, value):
         #validar si existe una raíz en el árbol
-        if self.root is None:
+        if self._root is None:
             raise Exception("El árbol no tiene una raíz.")
         else:
-            return self.__search(self.root, value)
+            return self.__search(self._root, value)
 
     # función recursiva para atender la búsqueda
     def __search(self, currentRoot, value):
@@ -85,11 +87,11 @@ class BST:
     # Método para recorrido en anchura
     def breadthFirstSearch(self):
         # verificar si el árbol está vacío
-        if self.root is None:
+        if self._root is None:
             print("El árbol está vacío.")
         else:
             # se encola la raíz de primera
-            queue = [self.root]
+            queue = [self._root]
             # resultado del recorrido
             result = []
             # mientras existan elementos en la cola (nodos)
@@ -110,13 +112,13 @@ class BST:
     # Método para realizar el recorrido en profundidad tipo  Pre-Order
     def preOrderTraversal(self):
         # validar si el árbol está vacío y mostrar mensaje
-        if self.root is None:
+        if self._root is None:
             print("El árbol está vacío.")
         else:
             # si el árbol no está vacío, se genera un result que tendrá el recorrido al final
             result = []
             # se inicia el llamado recursivo por la raiz del árbol
-            self.__preOrderTraversal(self.root, result)
+            self.__preOrderTraversal(self._root, result)
             return result
 
     # Método recursivo para el recorrido Pre-Order
@@ -136,13 +138,13 @@ class BST:
     # Método para realizar el recorrido en profundidad tipo  In-Order
     def inOrderTraversal(self):
         # validar si el árbol está vacío y mostrar mensaje
-        if self.root is None:
+        if self._root is None:
             print("El árbol está vacío.")
         else:
             # si el árbol no está vacío, se genera un result que tendrá el recorrido al final
             result = []
             # se inicia el llamado recursivo por la raiz del árbol
-            self.__inOrderTraversal(self.root, result)
+            self.__inOrderTraversal(self._root, result)
             return result
 
     # Método recursivo para el recorrido In-Order
@@ -161,13 +163,13 @@ class BST:
     # Método para realizar el recorrido en profundidad tipo  Pos-Order
     def posOrderTraversal(self):
         # validar si el árbol está vacío y mostrar mensaje
-        if self.root is None:
+        if self._root is None:
             print("El árbol está vacío.")
         else:
         # si el árbol no está vacío, se genera un result que tendrá el recorrido al final
             result = []
         # se inicia el llamado recursivo por la raiz del árbol
-            self.__posOrderTraversal(self.root, result)
+            self.__posOrderTraversal(self._root, result)
             return result
 
     # Método recursivo para el recorrido Pos-Order
@@ -271,10 +273,10 @@ class BST:
     
     # Método para dibujar el árbol en forma de árbol
     def print_tree(self):
-        if self.root is None:
+        if self._root is None:
             print("El árbol está vacío.")
         else:
-            self.__print_tree(self.root, "", True)
+            self.__print_tree(self._root, "", True)
 
     # Methodo para imprimir el árbol BST
     def __print_tree(self, node=None, prefix="", is_left=True):
@@ -292,3 +294,64 @@ class BST:
             if node.getLeftChild():
                 new_prefix = prefix + ("    " if is_left else "│   ")
                 self.__print_tree(node.getLeftChild(), new_prefix, True)
+
+    def buildFromTopology(self, tree_data):
+        # Define una función interna recursiva para construir cada nodo
+        def build_node(data):
+            # Si el dato es None (hoja o vacío), retorna None
+            if data is None:
+                return None
+            
+            # Crea una instancia de Flight con los campos del JSON
+            # Mapea 'codigo' a id, 'origen' a origin, etc.
+            flight = Flight(
+                id=data['codigo'],
+                origin=data['origen'],
+                destiny=data['destino'],
+                departureTime=data['horaSalida'],
+                basePrice=data['precioBase'],
+                finalPrice=data['precioFinal'],
+                passengers=data['pasajeros'],
+                promotion=data['promocion'],
+                alert=data['alerta']
+            )
+            
+            # Construye recursivamente el hijo izquierdo llamando a build_node con 'izquierdo'
+            flight.setLeftChild(build_node(data.get('izquierdo')))
+            
+            # Construye recursivamente el hijo derecho llamando a build_node con 'derecho'
+            flight.setRightChild(build_node(data.get('derecho')))
+            
+            # Si existe hijo izquierdo, asigna este nodo como su padre
+            if flight.getLeftChild():
+                flight.getLeftChild().setParent(flight)
+            
+            # Si existe hijo derecho, asigna este nodo como su padre
+            if flight.getRightChild():
+                flight.getRightChild().setParent(flight)
+            
+            # Retorna el nodo construido
+            return flight
+        
+        # Asigna la raíz del árbol llamando a build_node con el dato raíz del JSON
+        self._root = build_node(tree_data)
+
+    # Método para contar las hojas del árbol (nodos sin hijos)
+    def countLeaves(self):
+        if self._root is None:
+            return 0
+        return self.__countLeaves(self._root)
+
+    # Método recursivo auxiliar para contar hojas
+    def __countLeaves(self, node):
+        if node is None:
+            return 0
+        # Si no tiene hijos izquierdo ni derecho, es una hoja
+        if node.getLeftChild() is None and node.getRightChild() is None:
+            return 1
+        # Suma las hojas de los subárboles izquierdo y derecho
+        return self.__countLeaves(node.getLeftChild()) + self.__countLeaves(node.getRightChild())
+
+    # Método para obtener la profundidad del árbol (altura)
+    def getDepth(self):
+        return self.getHeightNode(self._root)

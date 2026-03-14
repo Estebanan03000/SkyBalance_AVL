@@ -1,0 +1,37 @@
+{
+  "flights": [
+    {
+      "codigo": 10,
+      "origen": "Bogotá",
+      "destino": "Medellín",
+      "horaSalida": "08:00",
+      "precioBase": 100.0,
+      "precioFinal": 120.0,
+      "pasajeros": 150,
+      "promocion": 0.1,
+      "alerta": false
+    },
+    {
+      "codigo": 5,
+      "origen": "Cali",
+      "destino": "Bogotá",
+      "horaSalida": "10:00",
+      "precioBase": 80.0,
+      "precioFinal": 90.0,
+      "pasajeros": 100,
+      "promocion": 0.0,
+      "alerta": true
+    },
+    {
+      "codigo": 15,
+      "origen": "Medellín",
+      "destino": "Cali",
+      "horaSalida": "12:00",
+      "precioBase": 110.0,
+      "precioFinal": 130.0,
+      "pasajeros": 120,
+      "promocion": 0.05,
+      "alerta": false
+    }
+  ]
+}
