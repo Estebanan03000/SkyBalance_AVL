@@ -5,6 +5,10 @@ from Models.BST import BST
 class AVL(BST):
     def __init__(self):
         self._root = None
+        self._RR_count = 0
+        self._LL_count = 0
+        self._RL_count = 0
+        self._LR_count = 0
 
     def getRoot(self):
         return self._root
@@ -105,6 +109,7 @@ class AVL(BST):
 
     # método para el giro simple a la derecha
     def __rotateRight(self, topNode):
+        self._LL_count += 1 
         # se obtiene el nodo de la mitad
         middleNode = topNode.getLeftChild()
 
@@ -138,6 +143,7 @@ class AVL(BST):
 
     # método para el giro simple a la izquierda
     def __rotateLeft(self, topNode):
+        self._RR_count += 1
         # se obtiene el nodo de la mitad
         middleNode = topNode.getRightChild()
 
@@ -175,23 +181,30 @@ class AVL(BST):
         # caso negativo, va por R
         if bf < -1:
             bfChild = self.getBalanceFactor(node.getRightChild())
-            # caso negativo, va por R
             if bfChild < 0:
-                bfCase = "RR"
+                bfCase = "RR"  
             else:
-                # caso positivo va por L
                 bfCase = "RL"
-        # caso positivo L
-        else:
+                self._RL_count += 1
+        else:  # caso positivo L
             bfChild = self.getBalanceFactor(node.getLeftChild())
-            # caso positivo, va por L
             if bfChild > 0:
                 bfCase = "LL"
             else:
-                # caso negativo va por RM
                 bfCase = "LR"
-        return bfCase
+                self._LR_count += 1
 
+        return bfCase
+    
+    #Method to return the amount of rotations of each type
+    def getRotationCounts(self):
+        return {
+            "RR": self._RR_count,
+            "LL": self._LL_count,
+            "RL": self._RL_count,
+            "LR": self._LR_count
+        }
+            
     # Método para calcular el BF de un nodo
     def getBalanceFactor(self, node):
         if node is None:

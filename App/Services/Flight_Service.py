@@ -1,6 +1,7 @@
 from Models.Flight import Flight
 from Models.AVL import AVL
 from Models.Stack import Stack
+from Models.BST import BST
 
 class Flight_Service:
     """
@@ -19,13 +20,22 @@ class Flight_Service:
     - Remove flights from the AVL tree
     """
 
-    def __init__(self):
+    def __init__(self, mode = "Global Balance"):
         """
         Initializes the Flight_Service with an empty AVL tree and an empty Stack to undo operations
         """
-        self._tree = AVL()
         self._history = Stack()
+        self._mode = mode
 
+    def set_mode(self, mode):
+        if mode == "Stress":
+            self._tree = BST()
+        else:
+            old_flights = BST.get_all_flights()
+            self._tree = AVL()
+            for flight in old_flights:
+                self._tree.insert(flight)
+                
     # CREATE
     def create_flight(self, flight: Flight):
         """
@@ -121,44 +131,38 @@ class Flight_Service:
 
     # UPDATE
     def update_flight(self, flight_id, **kwargs):
-        """
-        Updates attributes of an existing flight.
 
-        Only the attributes provided in kwargs will be modified.
-
-        Parameters
-        ----------
-        flight_id : int
-            ID of the flight to update.
-        **kwargs : dict
-            Dictionary containing the attributes to update.
-
-        Raises
-        ------
-        Exception
-            If the flight does not exist.
-        """
         flight = self.get_flight(flight_id)
 
         if flight is None:
             raise Exception("Flight not found")
 
+        # 🔹 Guardar valores anteriores SOLO de los campos que se van a modificar
+        old_values = {}
+
         if "origin" in kwargs:
+            old_values["origin"] = flight.getOrigin()
             flight.setOrigin(kwargs["origin"])
 
         if "destiny" in kwargs:
+            old_values["destiny"] = flight.getDestiny()
             flight.setDestiny(kwargs["destiny"])
 
         if "basePrice" in kwargs:
+            old_values["basePrice"] = flight.getBasePrice()
             flight.setBasePrice(kwargs["basePrice"])
 
         if "finalPrice" in kwargs:
+            old_values["finalPrice"] = flight.getFinalPrice()
             flight.setFinalPrice(kwargs["finalPrice"])
 
         if "passengers" in kwargs:
+            old_values["passengers"] = flight.getPassengers()
             flight.setPassengers(kwargs["passengers"])
-        
-        self._history.push(("update", flight_id))
+
+        # 🔹 Guardar en la pila SOLO si hubo cambios
+        if old_values:
+            self._history.push(("update", flight_id, old_values))
 
     # DELETE
     def delete_flight(self, flight_id):
@@ -183,7 +187,7 @@ class Flight_Service:
         self._tree.delete(flight_id)
         self._history.push(("insert", flight))
 
-def undo(self):
+    def undo(self):
         if self._history.is_empty():
             print("No hay operaciones para deshacer")
             return

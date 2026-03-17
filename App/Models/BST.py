@@ -335,6 +335,11 @@ class BST:
         
         # Asigna la raíz del árbol llamando a build_node con el dato raíz del JSON
         self._root = build_node(tree_data)
+    
+    def get_all_nodes(self):
+        nodes = []
+        self.__inOrderTraversal(self._root, nodes)
+        return nodes
 
     # Método para contar las hojas del árbol (nodos sin hijos)
     def countLeaves(self):
