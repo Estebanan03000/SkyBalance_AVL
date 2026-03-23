@@ -360,3 +360,60 @@ class BST:
     # Método para obtener la profundidad del árbol (altura)
     def getDepth(self):
         return self.getHeightNode(self._root)
+
+    # ==================== SERIALIZACIÓN ====================
+    # Método para guardar el árbol completo en JSON
+
+    def serialize_to_dict(self):
+        """
+        Convierte el árbol completo a un diccionario para guardarlo como JSON.
+        Preserva la estructura jerárquica completa con todos los datos.
+        
+        Retorna:
+            dict: Diccionario anidado que representa el árbol completo.
+                  Cada nodo contiene: datos del vuelo + altura + balance factor (si es AVL)
+                  + referencias a hijos izquierdo y derecho.
+        """
+        return self.__serialize_node(self._root)
+
+    def __serialize_node(self, node):
+        """
+        Función recursiva que serializa un nodo y sus subárboles.
+        Procesa cada nodo y llama recursivamente a sus hijos.
+        
+        Parámetros:
+            node: Nodo actual a serializar (puede ser None)
+        
+        Retorna:
+            dict o None: Diccionario con datos del nodo e hijos, o None si el nodo es vacío
+        """
+        # Si el nodo es None, retorna None (base de la recursión)
+        if node is None:
+            return None
+        
+        # Crear diccionario con todos los datos del vuelo
+        node_data = {
+            "id": node.getValue(),
+            "origin": node.getOrigin(),
+            "destiny": node.getDestiny(),
+            "departureTime": str(node.getDepartureTime()),
+            "basePrice": node.getBasePrice(),
+            "finalPrice": node.getFinalPrice(),
+            "passengers": node.getPassengers(),
+            "promotion": node.getPromotion(),
+            "alert": node.getAlert(),
+        }
+        
+        # Si es un árbol AVL, agregar información de balanceo
+        # (La clase AVL hereda de BST así que verifica mediante isinstance)
+        from Models.AVL import AVL
+        if isinstance(self, AVL):
+            node_data["altura"] = self.getHeightNode(node)
+            node_data["balanceFactor"] = self.getBalanceFactor(node)
+        
+        # Llamadas RECURSIVAS a los hijos
+        # Esto es lo que construye la estructura jerárquica
+        node_data["izquierdo"] = self.__serialize_node(node.getLeftChild())
+        node_data["derecho"] = self.__serialize_node(node.getRightChild())
+        
+        return node_data

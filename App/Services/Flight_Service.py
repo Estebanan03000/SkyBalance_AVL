@@ -2,6 +2,7 @@ from Models.Flight import Flight
 from Models.AVL import AVL
 from Models.Stack import Stack
 from Models.BST import BST
+import json
 
 class Flight_Service:
     """
@@ -26,12 +27,18 @@ class Flight_Service:
         """
         self._history = Stack()
         self._mode = mode
+        # Inicializar el árbol según el modo
+        if mode == "Stress":
+            self._tree = BST()
+        else:
+            self._tree = AVL()
 
     def set_mode(self, mode):
         if mode == "Stress":
             self._tree = BST()
         else:
-            old_flights = BST.get_all_flights()
+            # Obtener todos los vuelos del árbol actual antes de cambiar
+            old_flights = self.get_all_flights()
             self._tree = AVL()
             for flight in old_flights:
                 self._tree.insert(flight)
@@ -198,8 +205,32 @@ class Flight_Service:
             self._tree.delete(action[1])
 
         elif action[0] == "insert":
-            self._tree.insert(action[1])
+            pass
 
-        elif action[0] == "update":
-            flight = self.get_flight(action[1])
-            flight.setFinalPrice(action[2])
+    # ==================== EXPORTACIÓN ====================
+    # Método para guardar el árbol completo en archivo JSON
+
+    def export_tree_to_json(self, filename):
+        """
+        Exporta el árbol completo a un archivo JSON.
+        Guarda la estructura jerárquica del árbol incluyendo todas las propiedades
+        de cada vuelo, alturas y factores de balance (si es AVL).
+        
+        Parámetros:
+            filename: Nombre o ruta del archivo donde guardar el JSON
+        
+        Retorna:
+            bool: True si la exportación fue exitosa, False si hay error
+        """
+        try:
+            # Serializar el árbol a diccionario
+            tree_data = self._tree.serialize_to_dict()
+            
+            # Guardar en archivo JSON con formato legible (indent=2)
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(tree_data, f, indent=2, ensure_ascii=False)
+            
+            return True
+        except Exception as e:
+            print(f"Error al exportar árbol: {str(e)}")
+            return False

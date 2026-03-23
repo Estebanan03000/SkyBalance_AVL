@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from Services import Flight_Service
-from Models import Flight
+from App.Services.Flight_Service import Flight_Service
+from App.Models.Flight import Flight
 from datetime import datetime
 
 # Create an instance of the Flight_Service
@@ -128,3 +128,40 @@ def delete_flight(flight_id):
         return jsonify({"message": "Flight deleted"})
     except Exception as e:
         return jsonify({"error": str(e)}), 404
+
+
+# ===============================
+# POST /tree/export - Export tree to JSON file
+# ===============================
+@main_routes.route("/tree/export", methods=["POST"])
+def export_tree():
+    """
+    Endpoint to export the complete AVL tree structure to a JSON file.
+    
+    Guarda la estructura jerárquica completa del árbol, preservando:
+        - Estructura padre-hijo de cada nodo
+        - Altura de cada nodo
+        - Factor de equilibrio (si es AVL)
+        - Todos los datos del vuelo (precio, pasajeros, promociones, alertas, etc.)
+    
+    Expects JSON in request body:
+        - filename: Name or path of the JSON file to create
+                    Example: "tree_backup.json"
+    
+    Returns:
+        JSON message confirming successful export, or error message
+    """
+    try:
+        data = request.get_json()
+        filename = data.get("filename", "tree_export.json")
+        
+        # Exportar el árbol
+        success = flight_service.export_tree_to_json(filename)
+        
+        if success:
+            return jsonify({"message": f"Árbol exportado exitosamente a {filename}"}), 200
+        else:
+            return jsonify({"error": "Error al exportar el árbol"}), 500
+            
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

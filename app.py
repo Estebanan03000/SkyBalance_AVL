@@ -1,6 +1,10 @@
 from flask import Flask
+from App.routes import main_routes
 
 app = Flask(__name__)
+
+# Registrar el blueprint con todas las rutas
+app.register_blueprint(main_routes)
 
 @app.route("/")
 def home():
