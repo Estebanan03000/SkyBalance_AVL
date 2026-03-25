@@ -2,6 +2,7 @@ from Models.Flight import Flight
 from Models.AVL import AVL
 from Models.Stack import Stack
 from Models.BST import BST
+from Models.Queue import Queue
 import json
 
 class Flight_Service:
@@ -196,8 +197,7 @@ class Flight_Service:
 
     def undo(self):
         if self._history.is_empty():
-            print("No hay operaciones para deshacer")
-            return
+            raise Exception("The queue is empty")
 
         action = self._history.pop()
 
@@ -206,6 +206,68 @@ class Flight_Service:
 
         elif action[0] == "insert":
             pass
+
+    def multi_inserts(self, flights_list):
+        """
+        Inserts multiple flights into AVL and returns report list (Flask-friendly)
+        """
+        report_list = []
+        queue = Queue()
+
+        # Encolar todos los vuelos recibidos
+        for flight in flights_list:
+            queue.enqueue(flight)
+
+        # Procesar la cola
+        while not queue.is_empty():
+            flight = queue.dequeue()
+            report = self._insert_with_report(flight)
+            report_list.append(report)
+            self._history.push(("delete", flight.getValue()))
+
+        return report_list
+
+    def _insert_with_report(self, flight):
+        """
+        Inserts a flight into the AVL tree and generates a report
+        based on rotation count changes.
+        """
+
+        # 1. Save rotation counters BEFORE insertion
+        before = self._tree.getRotationCounts().copy()
+
+        # 2. Insert into AVL
+        self._tree.insert(flight)
+
+        # 3. Save rotation counters AFTER insertion
+        after = self._tree.getRotationCounts()
+
+        # 4. Compare counters to detect if a conflict occurred
+        rotation_detected = None
+
+        for rotation_type in ["LL", "RR", "LR", "RL"]:
+            if after[rotation_type] > before[rotation_type]:
+                rotation_detected = rotation_type
+                break
+
+        # 5. Build user-friendly report
+        if rotation_detected:
+            return {
+                "status": "conflict",
+                "flight_id": flight.getValue(),
+                "origin": flight.getOrigin(),
+                "destiny": flight.getDestiny(),
+                "conflict_type": rotation_detected,
+                "rotation_applied": rotation_detected
+            }
+        else:
+            return {
+                "status": "ok",
+                "flight_id": flight.getValue(),
+                "origin": flight.getOrigin(),
+                "destiny": flight.getDestiny()
+            }
+
 
     # ==================== EXPORTACIÓN ====================
     # Método para guardar el árbol completo en archivo JSON

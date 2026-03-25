@@ -165,3 +165,27 @@ def export_tree():
             
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+    
+    
+@main_routes.route("/flights/insert", methods=["POST"])
+def insert_flight():
+    """
+    Endpoint para insertar un solo vuelo usando multi_inserts.
+    """
+    data = request.get_json()
+
+    flight = Flight(
+        data["id"],
+        data["origin"],
+        data["destiny"],
+        datetime.strptime(data["date"], "%Y-%m-%d %H:%M:%S"),
+        data["basePrice"],
+        data["finalPrice"],
+        data["passengers"],
+        data.get("discount", 0),
+        data.get("sold", False)
+    )
+
+    # Llama a multi_inserts con una lista de un solo elemento
+    reports = flight_service.multi_inserts([flight])
+    return jsonify(reports[0]), 200  # Devuelve solo el reporte del vuelo
