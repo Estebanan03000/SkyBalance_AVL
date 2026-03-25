@@ -4,12 +4,12 @@ class Queue:
 
     # method that allows adding an element to the queue
     # item: element to add
-    def push(self, item):
+    def enqueue(self, item):
         self._data.append(item)
 
     # method that removes the first element of the queue
     # returns: the removed element
-    def pop(self):
+    def dequeue(self):
         if self.is_empty():
             raise Exception("The queue is empty")
         return self._data.pop(0)
