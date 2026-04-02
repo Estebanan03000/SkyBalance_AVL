@@ -10,182 +10,182 @@ class BST:
     def setRoot(self, root):
         self._root = root
 
-    # método de insertar para verificar si no hay raíz
-    # cuando no hay raíz, se crea el nodo y se asigna como raiz
-    # cuando si hay raiz se procede a insertar llamando a la función privada con la raiz del árbol y el nodo a insertar
+    # Insert method to check if there is no root
+    # When there is no root, the node is created and assigned as root
+    # When there is a root, proceed to insert by calling the private function with the tree root and the node to insert
     def insert(self, node):
-        # verificar si no hay raiz para asignar el nuevo como raiz
+        # Check if there is no root to assign the new one as root
         if self._root is None:
             self._root = node
         else:
             self.__insert(self._root, node)
 
-    # Método recursivo para insertar un nodo cuando se tiene raiz en el árbol
+    # Recursive method to insert a node when the tree has a root
     def __insert(self, currentRoot, node):
         if node.getValue() == currentRoot.getValue():
             print(f"El valor del nodo {node.getValue()} ya existe en el árbol.")
         else:
-        # se verifica si el valor a insertar es mayor que el actual raiz
+        # Check if the value to insert is greater than the current root
             if node.getValue() > currentRoot.getValue():
-            # se verifica si existe un hijo derecho
+            # Check if a right child exists
                 if currentRoot.getRightChild() is None:
-            # si no tiene hijo derecho, se asigna el nodo como hijo derecho
+            # If it has no right child, assign the node as right child
                     currentRoot.setRightChild(node)
-            # y el nuevo nodo tendrá como padre a la actual raiz
+            # And the new node will have the current root as parent
                     node.setParent(currentRoot)
                 else:
-            # ya tiene hijo derecho, entonces se debe procesar la inserción desde el hijo derecho
-            # haciendo el llamado recursivo con ese hijo
+            # It already has a right child, so insertion should be processed from the right child
+            # Making the recursive call with that child
                     self.__insert(currentRoot.getRightChild(), node)
             else:
-            # el valor del nodo a insertar es menor que el valor de la actual raiz
-            # se verifica si tiene hijo izquierdo
+            # The value of the node to insert is less than the value of the current root
+            # Check if it has a left child
                 if currentRoot.getLeftChild() is None:
-            # si no tiene se asigna el nodo como hijo izquierdo
+            # If it doesn't have one, assign the node as left child
                     currentRoot.setLeftChild(node)
-                    # y al nuevo nodo se le asigna como padre a la actual raiz
+                    # And the new node is assigned the current root as parent
                     node.setParent(currentRoot)
                 else:
-            # si tiene hijo izquierdo, entonces se llama recursivamente por el hijo izquierdo con el nodo a insertar.
+            # If it has a left child, then recursively call with the left child and the node to insert.
                     self.__insert(currentRoot.getLeftChild(), node)
 
-    # Método que permita realizar la búsqueda de un nodo mediante su valor
-    # debe seguir la lógica de las reglas de un BST
+    # Method to search for a node by its value
+    # Must follow the logic of BST rules
     def search(self, value):
-        #validar si existe una raíz en el árbol
+        # Validate if a root exists in the tree
         if self._root is None:
             raise Exception("El árbol no tiene una raíz.")
         else:
             return self.__search(self._root, value)
 
-    # función recursiva para atender la búsqueda
+    # Recursive function to handle the search
     def __search(self, currentRoot, value):
-        # validar si el valor buscado es igual a la raiz actual
+        # Validate if the searched value equals the current root
         # print(f"El valor del nodo es: {currentRoot.getValue()}")
         # print(f"Comparación: {currentRoot.getValue() == value}" )
         if currentRoot.getValue() == value:
-        # si es así se retorna la actual raiz
+        # If so, return the current root
             return currentRoot
-        # sino se valida si se debe ir por la derecha o por la izquierda
+        # Otherwise validate if we should go right or left
         elif value > currentRoot.getValue():
-        # si es mayor, se verifica que exista un hijo derecho
-        # en caso de no existir se genera
+        # If greater, verify that a right child exists
+        # If it doesn't exist, return None
             if currentRoot.getRightChild() is None:
                 return None
             else:
-            # se pasa la solicitud de búsqueda al hijo derecho
+            # Pass the search request to the right child
                 return self.__search(currentRoot.getRightChild(), value)
         else:
-        # si es menor, se verifica que exista un hijo izquierdo
-        # en caso de no existir se genera
+        # If less, verify that a left child exists
+        # If it doesn't exist, return None
             if currentRoot.getLeftChild() is None:
                 return None
             else:
-            # se pasa la solicitud de búsqueda al hijo izquierdo
+            # Pass the search request to the left child
                 return self.__search(currentRoot.getLeftChild(), value)
 
-    # Método para recorrido en anchura
+    # Method for breadth-first traversal
     def breadthFirstSearch(self):
-        # verificar si el árbol está vacío
+        # Check if the tree is empty
         if self._root is None:
             print("El árbol está vacío.")
         else:
-            # se encola la raíz de primera
+            # Enqueue the root first
             queue = [self._root]
-            # resultado del recorrido
+            # Traversal result
             result = []
-            # mientras existan elementos en la cola (nodos)
-            # se debe procesar con: desencolar, imprimir y encolar hijos
+            # While there are elements in the queue (nodes)
+            # Process with: dequeue, print and enqueue children
             while len(queue) > 0:
-                # desencolar
+                # Dequeue
                 currentNode = queue.pop(0)
-                # imprimir que es agregar al resultado
+                # Print which is add to result
                 result.append(currentNode.getValue())
-                # se valida que tenga hijo derecho para encolarlo
+                # Validate that it has a left child to enqueue it
                 if currentNode.getLeftChild() is not None:
                     queue.append(currentNode.getLeftChild())
-                # se valida que tenga hijo izquierdo para encolarlo
+                # Validate that it has a right child to enqueue it
                 if currentNode.getRightChild() is not None:
                     queue.append(currentNode.getRightChild())
         return result
 
-    # Método para realizar el recorrido en profundidad tipo  Pre-Order
+    # Method for depth-first traversal type Pre-Order
     def preOrderTraversal(self):
-        # validar si el árbol está vacío y mostrar mensaje
+        # Validate if the tree is empty and show message
         if self._root is None:
             print("El árbol está vacío.")
         else:
-            # si el árbol no está vacío, se genera un result que tendrá el recorrido al final
+            # If the tree is not empty, generate a result that will have the traversal at the end
             result = []
-            # se inicia el llamado recursivo por la raiz del árbol
+            # Start the recursive call from the tree root
             self.__preOrderTraversal(self._root, result)
             return result
 
-    # Método recursivo para el recorrido Pre-Order
+    # Recursive method for Pre-Order traversal
     def __preOrderTraversal(self, currentRoot, result):
-        # Se imprime (agrega a la cola) la raiz actual
+        # Print (add to list) the current root
         result.append(currentRoot)
 
-        # se verifica si tiene hijo izquierdo para seguir el recorrido por él
+        # Check if it has a left child to continue traversal through it
         if currentRoot.getLeftChild() is not None:
             self.__preOrderTraversal(currentRoot.getLeftChild(), result)
 
-        # se verifica si tiene hijo derecho para seguir el recorrido por él
+        # Check if it has a right child to continue traversal through it
         if currentRoot.getRightChild() is not None:
             self.__preOrderTraversal(currentRoot.getRightChild(), result)
 
 
-    # Método para realizar el recorrido en profundidad tipo  In-Order
+    # Method for depth-first traversal type In-Order
     def inOrderTraversal(self):
-        # validar si el árbol está vacío y mostrar mensaje
+        # Validate if the tree is empty and show message
         if self._root is None:
             print("El árbol está vacío.")
         else:
-            # si el árbol no está vacío, se genera un result que tendrá el recorrido al final
+            # If the tree is not empty, generate a result that will have the traversal at the end
             result = []
-            # se inicia el llamado recursivo por la raiz del árbol
+            # Start the recursive call from the tree root
             self.__inOrderTraversal(self._root, result)
             return result
 
-    # Método recursivo para el recorrido In-Order
+    # Recursive method for In-Order traversal
     def __inOrderTraversal(self, currentRoot, result):
-        # se verifica si tiene hijo izquierdo para seguir el recorrido por él
+        # Check if it has a left child to continue traversal through it
         if currentRoot.getLeftChild() is not None:
             self.__inOrderTraversal(currentRoot.getLeftChild(), result)
 
-        # Se imprime (agrega a la cola) la raiz actual
+        # Print (add to list) the current root
         result.append(currentRoot)
 
-        # se verifica si tiene hijo derecho para seguir el recorrido por él
+        # Check if it has a right child to continue traversal through it
         if currentRoot.getRightChild() is not None:
             self.__inOrderTraversal(currentRoot.getRightChild(), result)
 
-    # Método para realizar el recorrido en profundidad tipo  Pos-Order
+    # Method for depth-first traversal type Post-Order
     def posOrderTraversal(self):
-        # validar si el árbol está vacío y mostrar mensaje
+        # Validate if the tree is empty and show message
         if self._root is None:
             print("El árbol está vacío.")
         else:
-        # si el árbol no está vacío, se genera un result que tendrá el recorrido al final
+        # If the tree is not empty, generate a result that will have the traversal at the end
             result = []
-        # se inicia el llamado recursivo por la raiz del árbol
+        # Start the recursive call from the tree root
             self.__posOrderTraversal(self._root, result)
             return result
 
-    # Método recursivo para el recorrido Pos-Order
+    # Recursive method for Post-Order traversal
     def __posOrderTraversal(self, currentRoot, result):
-        # se verifica si tiene hijo izquierdo para seguir el recorrido por él
+        # Check if it has a left child to continue traversal through it
         if currentRoot.getLeftChild() is not None:
             self.__posOrderTraversal(currentRoot.getLeftChild(), result)
 
-        # se verifica si tiene hijo derecho para seguir el recorrido por él
+        # Check if it has a right child to continue traversal through it
         if currentRoot.getRightChild() is not None:
             self.__posOrderTraversal(currentRoot.getRightChild(), result)
 
-        # Se imprime (agrega a la cola) la raiz actual
+        # Print (add to list) the current root
         result.append(currentRoot)
 
-    # Método para eliminar
+    # Method to delete
     def delete(self, value):
         if self._root is None:
             print("El árbol está vacío.")
@@ -196,9 +196,9 @@ class BST:
             else:
                 self.__deleteNode(node)
 
-    # Método que evalúa cada uno de los casos de eliminar y procede según sea
+    # Method that evaluates each deletion case and proceeds accordingly
     def __deleteNode(self, node):
-        # identificar el caso de eliminación
+        # Identify the deletion case
         nodeCase = self.IdentifyDeletionCase(node)
         match nodeCase:
             case 1:
@@ -208,7 +208,7 @@ class BST:
             case 3:
                 self.__deleteNodeWithTwoChildren(node)
 
-    # Método que permite eliminar un nodo hoja del árbol
+    # Method that allows deleting a leaf node from the tree
     def __deleteLeafNode(self, node):
         if node.getValue() < node.getParent().getValue():
             node.getParent().setLeftChild(None)
@@ -237,10 +237,10 @@ class BST:
         node.setValue(successor.getValue())
         self.__deleteNode(successor)
 
-    # Método para identificar cuál es el caso de eliminación
-    # 1. Nodo hoja
-    # 2. Nodo con un hijo
-    # 3. Nodo con 2 hijos
+    # Method to identify which is the deletion case
+    # 1. Leaf node
+    # 2. Node with one child
+    # 3. Node with 2 children
     def IdentifyDeletionCase(self, node):
         nodeCase = 2
         if(node.getLeftChild() is None and node.getRightChild() is None):
@@ -249,36 +249,36 @@ class BST:
             nodeCase = 3
         return nodeCase
     
-    # Método que permite calcular la altura de un nodo
+    # Method that allows calculating the height of a node
     def getHeightNode(self, node):
         if node is None:
             return -1
         else:
             return self.__getHeightNode(node)
 
-    # Cálculo recursivo de la altura de un nodo
+    # Recursive calculation of the height of a node
     def __getHeightNode(self, node):
-        # si es None se debe retornar -1 para equilibrar el +1 de su padre
+        # If it is None, return -1 to balance the +1 of its parent
         if node is None:
             return -1
         else:
-            # se verifica altura por hijo izquierdo
+            # Check height by left child
             leftHeight = self.__getHeightNode(node.getLeftChild())
-            # se verifica altura por hijo derecho
+            # Check height by right child
             rightHeight = self.__getHeightNode(node.getRightChild())
-            # se obtiene el mayor valor de las alturas calculadas
+            # Get the greatest value of the calculated heights
             maxHeight = max(leftHeight, rightHeight)
-            # se incrementa en 1 al retornar al padre para representar la arista que los une
+            # Increment by 1 when returning to parent to represent the edge that unites them
             return maxHeight + 1
     
-    # Método para dibujar el árbol en forma de árbol
+    # Method to draw the tree as a tree
     def print_tree(self):
         if self._root is None:
             print("El árbol está vacío.")
         else:
             self.__print_tree(self._root, "", True)
 
-    # Methodo para imprimir el árbol BST
+    # Method to print the BST
     def __print_tree(self, node=None, prefix="", is_left=True):
         if node is not None:
             # Print right subtree
@@ -296,14 +296,14 @@ class BST:
                 self.__print_tree(node.getLeftChild(), new_prefix, True)
 
     def buildFromTopology(self, tree_data):
-        # Define una función interna recursiva para construir cada nodo
+        # Define an internal recursive function to build each node
         def build_node(data):
-            # Si el dato es None (hoja o vacío), retorna None
+            # If the data is None (leaf or empty), return None
             if data is None:
                 return None
             
-            # Crea una instancia de Flight con los campos del JSON
-            # Mapea 'codigo' a id, 'origen' a origin, etc.
+            # Create a Flight instance with the JSON fields
+            # Maps 'codigo' to id, 'origen' to origin, etc.
             flight = Flight(
                 id=data['codigo'],
                 origin=data['origen'],
@@ -316,24 +316,24 @@ class BST:
                 alert=data['alerta']
             )
             
-            # Construye recursivamente el hijo izquierdo llamando a build_node con 'izquierdo'
+            # Recursively build the left child by calling build_node with 'izquierdo'
             flight.setLeftChild(build_node(data.get('izquierdo')))
             
-            # Construye recursivamente el hijo derecho llamando a build_node con 'derecho'
+            # Recursively build the right child by calling build_node with 'derecho'
             flight.setRightChild(build_node(data.get('derecho')))
             
-            # Si existe hijo izquierdo, asigna este nodo como su padre
+            # If left child exists, assign this node as its parent
             if flight.getLeftChild():
                 flight.getLeftChild().setParent(flight)
             
-            # Si existe hijo derecho, asigna este nodo como su padre
+            # If right child exists, assign this node as its parent
             if flight.getRightChild():
                 flight.getRightChild().setParent(flight)
             
-            # Retorna el nodo construido
+            # Return the constructed node
             return flight
         
-        # Asigna la raíz del árbol llamando a build_node con el dato raíz del JSON
+        # Assign the tree root by calling build_node with the root data from JSON
         self._root = build_node(tree_data)
     
     def get_all_nodes(self):
@@ -341,57 +341,57 @@ class BST:
         self.__inOrderTraversal(self._root, nodes)
         return nodes
 
-    # Método para contar las hojas del árbol (nodos sin hijos)
+    # Method to count the leaves of the tree (nodes without children)
     def countLeaves(self):
         if self._root is None:
             return 0
         return self.__countLeaves(self._root)
 
-    # Método recursivo auxiliar para contar hojas
+    # Auxiliary recursive method to count leaves
     def __countLeaves(self, node):
         if node is None:
             return 0
-        # Si no tiene hijos izquierdo ni derecho, es una hoja
+        # If it has no left or right children, it is a leaf
         if node.getLeftChild() is None and node.getRightChild() is None:
             return 1
-        # Suma las hojas de los subárboles izquierdo y derecho
+        # Sum the leaves of the left and right subtrees
         return self.__countLeaves(node.getLeftChild()) + self.__countLeaves(node.getRightChild())
 
-    # Método para obtener la profundidad del árbol (altura)
+    # Method to get the depth of the tree (height)
     def getDepth(self):
         return self.getHeightNode(self._root)
 
-    # ==================== SERIALIZACIÓN ====================
-    # Método para guardar el árbol completo en JSON
+    # ==================== SERIALIZATION ====================
+    # Method to save the complete tree in JSON
 
     def serialize_to_dict(self):
         """
-        Convierte el árbol completo a un diccionario para guardarlo como JSON.
-        Preserva la estructura jerárquica completa con todos los datos.
+        Converts the complete tree to a dictionary to save as JSON.
+        Preserves the complete hierarchical structure with all data.
         
-        Retorna:
-            dict: Diccionario anidado que representa el árbol completo.
-                  Cada nodo contiene: datos del vuelo + altura + balance factor (si es AVL)
-                  + referencias a hijos izquierdo y derecho.
+        Returns:
+            dict: Nested dictionary representing the complete tree.
+                  Each node contains: flight data + height + balance factor (if AVL)
+                  + references to left and right children.
         """
         return self.__serialize_node(self._root)
 
     def __serialize_node(self, node):
         """
-        Función recursiva que serializa un nodo y sus subárboles.
-        Procesa cada nodo y llama recursivamente a sus hijos.
+        Recursive function that serializes a node and its subtrees.
+        Processes each node and recursively calls its children.
         
-        Parámetros:
-            node: Nodo actual a serializar (puede ser None)
+        Parameters:
+            node: Current node to serialize (can be None)
         
-        Retorna:
-            dict o None: Diccionario con datos del nodo e hijos, o None si el nodo es vacío
+        Returns:
+            dict or None: Dictionary with node data and children, or None if node is empty
         """
-        # Si el nodo es None, retorna None (base de la recursión)
+        # If the node is None, return None (base case of recursion)
         if node is None:
             return None
         
-        # Crear diccionario con todos los datos del vuelo
+        # Create dictionary with all flight data
         node_data = {
             "id": node.getValue(),
             "origin": node.getOrigin(),
@@ -404,15 +404,15 @@ class BST:
             "alert": node.getAlert(),
         }
         
-        # Si es un árbol AVL, agregar información de balanceo
-        # (La clase AVL hereda de BST así que verifica mediante isinstance)
+        # If it is an AVL tree, add balancing information
+        # (The AVL class inherits from BST so verify using isinstance)
         from Models.AVL import AVL
         if isinstance(self, AVL):
             node_data["altura"] = self.getHeightNode(node)
             node_data["balanceFactor"] = self.getBalanceFactor(node)
         
-        # Llamadas RECURSIVAS a los hijos
-        # Esto es lo que construye la estructura jerárquica
+        # RECURSIVE calls to children
+        # This is what builds the hierarchical structure
         node_data["izquierdo"] = self.__serialize_node(node.getLeftChild())
         node_data["derecho"] = self.__serialize_node(node.getRightChild())
         

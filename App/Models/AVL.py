@@ -16,90 +16,90 @@ class AVL(BST):
     def setRoot(self, root):
         self._root = root
 
-    # Método público para insertar
+    # Public method to insert
     def insert(self, node):
 
-        # si el árbol está vacío se inserta como raiz y el padre sería None
+        # If the tree is empty, insert as root and parent would be None
         if self._root is None:
             self._root = node
             node.setParent(None)
 
-        # si ya hay raíz se llama al método privado
+        # If there is already a root, call the private method
         else:
             self.__insert(self._root, node)
 
-    # Método recursivo para insertar un nodo cuando se tiene raiz en el árbol
+    # Recursive method to insert a node when the tree has a root
     def __insert(self, currentRoot, node):
         if node.getValue() == currentRoot.getValue():
             print(f"El valor del nodo {node.getValue()} ya existe en el árbol.")
         else:
-            # se verifica si el valor a insertar es mayor que el actual raiz
+            # Check if the value to insert is greater than the current root
             if node.getValue() > currentRoot.getValue():
-                # se verifica si existe un hijo derecho
+                # Check if a right child exists
                 if currentRoot.getRightChild() is None:
-                    # si no tiene hijo derecho, se asigna el nodo como hijo derecho
+                    # If it has no right child, assign the node as right child
                     currentRoot.setRightChild(node)
-                    # y el nuevo nodo tendrá como padre a la actual raiz
+                    # And the new node will have the current root as parent
                     node.setParent(currentRoot)
-                    # verificar desbalanceo
+                    # Check for imbalance
                     self.checkBalance(currentRoot)
                 else:
-                    # ya tiene hijo derecho, entonces se debe procesar la inserción desde el hijo derecho
-                    # haciendo el llamado recursivo con ese hijo
+                    # Already has a right child, so insertion should be processed from the right child
+                    # Making the recursive call with that child
                     self.__insert(currentRoot.getRightChild(), node)
             else:
-                # el valor del nodo a insertar es menor que el valor de la actual raiz
-                # se verifica si tiene hijo izquierdo
+                # The value of the node to insert is less than the value of the current root
+                # Check if it has a left child
                 if currentRoot.getLeftChild() is None:
-                    # si no tiene se asigna el nodo como hijo izquierdo
+                    # If it doesn't have one, assign the node as left child
                     currentRoot.setLeftChild(node)
-                    # y al nuevo nodo se le asigna como padre a la actual raiz
+                    # And the new node is assigned the current root as parent
                     node.setParent(currentRoot)
-                    # verificar desbalanceo
+                    # Check for imbalance
                     self.checkBalance(currentRoot)
                 else:
-                    # si tiene hijo izquierdo, entonces se llama recursivamente por el hijo izquierdo con el nodo a insertar.
+                    # If it has a left child, then recursively call with the left child and the node to insert.
                     self.__insert(currentRoot.getLeftChild(), node)
 
-    # INICIO DE MÉTODOS DEL BALANCEO DEL ÁRBOL AVL
+    # START OF AVL TREE BALANCING METHODS
     # -----------------------------------------------------------
 
-    # Método para chequear el balanceo de un árbol a partir de un nodo
+    # Method to check the balancing of a tree from a node
     def checkBalance(self, node):
         if node is None:
             raise Exception("EL nodo a balancear no es válido")
         self.__checkBalance(node)
 
-    # Método recursivo para validar el balanceo de un árbol
+    # Recursive method to validate tree balancing
     def __checkBalance(self, node):
-        # Se identifica el padre antes de hacer la rotación para evitar confusiones
+        # Identify the parent before rotation to avoid confusion
         parent = node.getParent()
         bf = self.getBalanceFactor(node)
         if abs(bf) > 1:
-            # se identifica el caso de desbalanceo (LL, RR, RL, LR)
+            # Identify the imbalance case (LL, RR, RL, LR)
             bfCase = self.getBalanceCase(node, bf)
             match bfCase:
                 case "LL":
-                    # rotar el nodo de en medio hacia la derecha
+                    # Rotate the middle node to the right
                     self.__rotateRight(node)
 
                 case "RR":
-                    # rotar el nodo de en medio hacia la izquierda
+                    # Rotate the middle node to the left
                     self.__rotateLeft(node)
 
                 case "LR":
-                    # rotar el hijo izquierdo
+                    # Rotate the left child
                     self.__rotateLeft(node.getLeftChild())
 
-                    # rotar el nodo desbalanceado
+                    # Rotate the imbalanced node
                     self.__rotateRight(node)
                 case "RL":
-                    # rotar el hijo derecho
+                    # Rotate the right child
                     self.__rotateRight(node.getRightChild())
 
-                    # rotar el nodo desbalanceado
+                    # Rotate the imbalanced node
                     self.__rotateLeft(node)
-        # Se verifica que el padre no sea None y se procede a balancearlo si lo requiere
+        # Check that the parent is not None and proceed to balance it if required
         if parent is not None:
             self.__checkBalance(parent)
         # Método para balancear un caso de desbalanceo LL
@@ -107,24 +107,24 @@ class AVL(BST):
         # if node.getParent() is not None:
         # self.__checkBalance(node.getParent())
 
-    # método para el giro simple a la derecha
+# Method for simple rotation to the right
     def __rotateRight(self, topNode):
         self._LL_count += 1 
-        # se obtiene el nodo de la mitad
+        # Get the middle node
         middleNode = topNode.getLeftChild()
 
-        # se obtiene el padre del nodo superior, cuando es la raiz será None
+        # Get the parent of the top node, when it is the root it will be None
         parentTopNode = topNode.getParent()
 
-        # se obtiene el hijo derecho del nodo de la mitad
+        # Get the right child of the middle node
         rightChildOfMiddleNode = middleNode.getRightChild()
 
-        # se mueve el superior como hijo derecho del nodo de la mitad
+        # Move the top as right child of the middle node
         middleNode.setRightChild(topNode)
         topNode.setParent(middleNode)
 
-        # reacomodar al nodo padre del superior apuntando al de la mitad
-        # verificar si el superior era la raiz
+        # Rearrange the parent node of the top pointing to the middle
+        # Check if the top was the root
         if parentTopNode is None:
             self._root = middleNode
             middleNode.setParent(None)
@@ -133,32 +133,32 @@ class AVL(BST):
                 parentTopNode.setLeftChild(middleNode)
             else:
                 parentTopNode.setRightChild(middleNode)
-            # sin importar si era hijo izq o derecho, se asigna ese padre del superior como padre del nodo de la mitad
+            # Regardless of whether it was left or right child, assign that parent of the top as parent of the middle node
             middleNode.setParent(parentTopNode)
 
-        # reasignar el hijo derecho del nodo de la mitad al nodo superior que ya bajó como hijo derecho del nodo de la mitad
+        # Reassign the left child of the middle node to the top node that already went down as right child of the middle node
         topNode.setLeftChild(rightChildOfMiddleNode)
         if rightChildOfMiddleNode is not None:
             rightChildOfMiddleNode.setParent(topNode)
 
-    # método para el giro simple a la izquierda
+    # Method for simple rotation to the left
     def __rotateLeft(self, topNode):
         self._RR_count += 1
-        # se obtiene el nodo de la mitad
+        # Get the middle node
         middleNode = topNode.getRightChild()
 
-        # se obtiene el padre del nodo superior, cuando es la raiz será None
+        # Get the parent of the top node, when it is the root it will be None
         parentTopNode = topNode.getParent()
 
-        # se obtiene el hijo izquierdo del nodo de la mitad
+        # Get the left child of the middle node
         leftChildOfMiddleNode = middleNode.getLeftChild()
 
-        # se mueve el superior como hijo izquierdo del nodo de la mitad
+        # Move the top as left child of the middle node
         middleNode.setLeftChild(topNode)
         topNode.setParent(middleNode)
 
-        # reacomodar al nodo padre del superior apuntando al de la mitad
-        # verificar si el superior era la raiz
+        # Rearrange the parent node of the top pointing to the middle
+        # Check if the top was the root
         if parentTopNode is None:
             self._root = middleNode
             middleNode.setParent(None)
@@ -167,18 +167,18 @@ class AVL(BST):
                 parentTopNode.setLeftChild(middleNode)
             else:
                 parentTopNode.setRightChild(middleNode)
-            # sin importar si era hijo izq o derecho, se asigna ese padre del superior como padre del nodo de la mitad
+            # Regardless of whether it was left or right child, assign that parent of the top as parent of the middle node
             middleNode.setParent(parentTopNode)
 
-        # reasignar el hijo izquierdo del nodo de la mitad al nodo superior que ya bajó como hijo izquierdo del nodo de la mitad
+        # Reassign the left child of the middle node to the top node that already went down as left child of the middle node
         topNode.setRightChild(leftChildOfMiddleNode)
         if leftChildOfMiddleNode is not None:
             leftChildOfMiddleNode.setParent(topNode)
 
-    # método para identificar el caso de desbalanceo
+    # Method to identify the imbalance case
     def getBalanceCase(self, node, bf):
         bfCase = ""
-        # caso negativo, va por R
+        # Negative case, goes by R
         if bf < -1:
             bfChild = self.getBalanceFactor(node.getRightChild())
             if bfChild < 0:
@@ -186,7 +186,7 @@ class AVL(BST):
             else:
                 bfCase = "RL"
                 self._RL_count += 1
-        else:  # caso positivo L
+        else:  # Positive case L
             bfChild = self.getBalanceFactor(node.getLeftChild())
             if bfChild > 0:
                 bfCase = "LL"
@@ -205,7 +205,7 @@ class AVL(BST):
             "LR": self._LR_count
         }
             
-    # Método para calcular el BF de un nodo
+    # Method to calculate the BF of a node
     def getBalanceFactor(self, node):
         if node is None:
             return 0
@@ -214,4 +214,4 @@ class AVL(BST):
         return leftChildHeight - rightChildHeight
 
     # -----------------------------------------------------------
-    # FIN DE MÉTODOS DEL BALANCEO DEL ÁRBOL AVL
+    # END OF AVL TREE BALANCING METHODS

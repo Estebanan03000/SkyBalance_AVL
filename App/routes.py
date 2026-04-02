@@ -1,4 +1,4 @@
-from flas import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify
 from App.Services.Flight_Service import Flight_Service
 from App.Models.Flight import Flight
 from datetime import datetime
