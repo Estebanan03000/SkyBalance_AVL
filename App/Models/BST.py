@@ -1,4 +1,5 @@
-from Models.Flight import Flight
+from Flight import Flight
+from Queue import Queue
 
 class BST:
     def __init__(self):
@@ -91,22 +92,23 @@ class BST:
             print("El árbol está vacío.")
         else:
             # Enqueue the root first
-            queue = [self._root]
+            queue = Queue()
+            queue.enqueue(self._root)
             # Traversal result
             result = []
             # While there are elements in the queue (nodes)
             # Process with: dequeue, print and enqueue children
-            while len(queue) > 0:
+            while not queue.is_empty():
                 # Dequeue
-                currentNode = queue.pop(0)
+                currentNode = queue.dequeue()
                 # Print which is add to result
                 result.append(currentNode.getValue())
                 # Validate that it has a left child to enqueue it
                 if currentNode.getLeftChild() is not None:
-                    queue.append(currentNode.getLeftChild())
+                    queue.enqueue(currentNode.getLeftChild())
                 # Validate that it has a right child to enqueue it
                 if currentNode.getRightChild() is not None:
-                    queue.append(currentNode.getRightChild())
+                    queue.enqueue(currentNode.getRightChild())
         return result
 
     # Method for depth-first traversal type Pre-Order
@@ -217,24 +219,43 @@ class BST:
         node.setParent(None)
 
     def __deleteNodeWithOneChild(self, node):
+        # Obtener el único hijo del nodo a eliminar
+        # Si existe hijo izquierdo, asignarlo como el hijo
         if node.getLeftChild() is not None:
             child = node.getLeftChild()
         else:
+            # En caso contrario, asignar el hijo derecho
             child = node.getRightChild()
+        
+        # Determinar si el hijo debe ser asignado como hijo izquierdo o derecho del padre
+        # Comparar el valor del hijo con el del padre del nodo a eliminar
         if child.getValue() < node.getParent().getValue():
+            # Si es menor, asignar como hijo izquierdo del padre
             node.getParent().setLeftChild(child)
         else:
+            # Si es mayor o igual, asignar como hijo derecho del padre
             node.getParent().setRightChild(child)
+        
+        # Actualizar la referencia del padre del hijo para que apunte al padre del nodo eliminado
         child.setParent(node.getParent())
+        
+        # Limpiar todas las referencias del nodo a eliminar para liberarlo
         node.setParent(None)
         node.setLeftChild(None)
         node.setRightChild(None)
 
     def __deleteNodeWithTwoChildren(self, node):
+        # Encontrar el sucesor inorden del nodo a eliminar
+        # El sucesor es el nodo más a la derecha del subárbol izquierdo
         successor = node.getLeftChild()
+        # Recorrer hacia la derecha hasta encontrar el nodo más a la derecha
         while successor.getRightChild() is not None:
             successor = successor.getRightChild()
+        
+        # Reemplazar el valor del nodo a eliminar con el valor del sucesor
         node.setValue(successor.getValue())
+        
+        # Eliminar recursivamente el sucesor (que tendrá a lo máximo un hijo izquierdo)
         self.__deleteNode(successor)
 
     # Method to identify which is the deletion case
@@ -406,7 +427,7 @@ class BST:
         
         # If it is an AVL tree, add balancing information
         # (The AVL class inherits from BST so verify using isinstance)
-        from Models.AVL import AVL
+        from AVL import AVL
         if isinstance(self, AVL):
             node_data["altura"] = self.getHeightNode(node)
             node_data["balanceFactor"] = self.getBalanceFactor(node)

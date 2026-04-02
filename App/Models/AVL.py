@@ -1,20 +1,14 @@
-from Models.BST import BST
+from BST import BST
 
 
 
 class AVL(BST):
     def __init__(self):
-        self._root = None
+        super().__init__()  # Call the constructor of the parent class (BST)
         self._RR_count = 0
         self._LL_count = 0
         self._RL_count = 0
         self._LR_count = 0
-
-    def getRoot(self):
-        return self._root
-
-    def setRoot(self, root):
-        self._root = root
 
     # Public method to insert
     def insert(self, node):

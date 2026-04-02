@@ -2,9 +2,9 @@ import json  # To load JSON files
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # Add root to path
-from Models.AVL import AVL  # Import AVL class
-from Models.BST import BST  # Import BST class
-from Models.Flight import Flight  # Import Flight class to create nodes
+from AVL import AVL  # Import AVL class
+from BST import BST  # Import BST class
+from Flight import Flight  # Import Flight class to create nodes
 
 class JSONLoader:
     def __init__(self):
