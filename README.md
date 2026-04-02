@@ -1,51 +1,52 @@
 # SkyBalance_AVL
 
-# Descripción
-Sistema que gestiona estructuras de datos como AVL, BST, pilas y colas,
-permitiendo operaciones sobre vuelos cargados desde archivos JSON.
-## Ejecución
-... Cómo hacerla...
+# Description
+System that manages data structures such as AVL, BST, stacks, and queues,
+allowing operations on flights loaded from JSON files.
 
-## Estructura del proyecto
+## Execution
+... How to run it...
+
+## Project Structure
 
 App/
 │
 ├── Models/
-│   ├── AVL.py          # Implementación de árbol AVL
-│   ├── BST.py          # Árbol binario de búsqueda
-│   ├── Flight.py       # Modelo de datos de vuelo
-│   ├── JSON.py         # Manejo de archivos JSON
-│   ├── Queue.py        # Implementación de cola
-│   ├── Stack.py        # Implementación de pila
+│   ├── AVL.py          # AVL tree implementation
+│   ├── BST.py          # Binary search tree
+│   ├── Flight.py       # Flight data model
+│   ├── JSON.py         # JSON file handling
+│   ├── Queue.py        # Queue implementation
+│   ├── Stack.py        # Stack implementation
 │
 ├── Services/
-│   ├── Flight_Service.py   # Lógica para manejar vuelos
-│   ├── Metrics_Service.py  # Cálculo de métricas
+│   ├── Flight_Service.py   # Logic for managing flights
+│   ├── Metrics_Service.py  # Metrics calculation
 │
-├── routes.py          # Definición de rutas (interacción)
-├── app.py             # Punto de entrada del sistema
+├── routes.py          # Route definitions (interaction)
+├── app.py             # System entry point
 
 
-## Flujo del sistema
+## System Flow
 
-1. El sistema inicia desde app.py
-2. Se cargan datos desde archivos JSON
-3. Los vuelos se almacenan en estructuras como AVL o BST
-4. Los servicios procesan la información (métricas, consultas)
-5. El usuario interactúa mediante rutas definidas
+1. The system starts from app.py
+2. Data is loaded from JSON files
+3. Flights are stored in structures such as AVL or BST
+4. Services process the information (metrics, queries)
+5. The user interacts through defined routes
 
-## Componentes principales
+## Main Components
 
-- AVL: Se utiliza para mantener los datos balanceados y garantizar búsquedas eficientes
-- BST: Implementación base para comparación de rendimiento
-- Queue: Manejo de procesos en orden FIFO
-- Stack: Soporte para operaciones auxiliares o recorridos
+- AVL: Used to keep data balanced and ensure efficient searches
+- BST: Base implementation for performance comparison
+- Queue: Handles processes in FIFO order
+- Stack: Supports auxiliary operations or traversals
 
-## Entrada de datos
+## Input Data
 
-El sistema carga información desde archivos JSON que contienen datos de vuelos.
+The system loads information from JSON files containing flight data.
 
-Ejemplo de estructura:
+Example structure:
 {
     "codigo": 10,
     "origen": "Bogotá",
@@ -58,9 +59,9 @@ Ejemplo de estructura:
     "alerta": false
 }
 
-## Funcionalidades
+## Functionalities
 
-- Cargar vuelos desde archivos JSON
-- Insertar datos en estructuras AVL y BST
-- Consultar información de vuelos
-- Calcular métricas del sistema
+- Load flights from JSON files
+- Insert data into AVL and BST structures
+- Query flight information
+- Calculate system metrics
