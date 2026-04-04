@@ -23,5 +23,9 @@ class Metrics_Service:
         for rot_type, count in rotations.items():
             print(f"{rot_type}: {count}")
         return rotations
+    
+    def TreeHeight(self):
+        root = self._Service._tree._root
+        return self._Service._tree.getHeightNode(root)
 
 
