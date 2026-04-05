@@ -1,8 +1,8 @@
-from Models.Flight import Flight
-from Models.AVL import AVL
-from Models.Stack import Stack
-from Models.BST import BST
-from Models.Queue import Queue
+from App.Models.Flight import Flight
+from App.Models.AVL import AVL
+from App.Models.Stack import Stack
+from App.Models.BST import BST
+from App.Models.Queue import Queue
 import json
 
 class Flight_Service:
@@ -74,34 +74,7 @@ class Flight_Service:
         Flight or None
             The Flight object if found, otherwise None.
         """
-        return self._search(self._tree.getRoot(), flight_id)
-
-    def _search(self, node, flight_id):
-        """
-        Recursively searches for a flight in the AVL tree.
-
-        Parameters
-        ----------
-        node : Flight
-            Current node being evaluated.
-        flight_id : int
-            ID of the flight being searched.
-
-        Returns
-        -------
-        Flight or None
-            The Flight object if found, otherwise None.
-        """
-        if node is None:
-            return None
-
-        if node.getValue() == flight_id:
-            return node
-
-        if flight_id < node.getValue():
-            return self._search(node.getLeftChild(), flight_id)
-
-        return self._search(node.getRightChild(), flight_id)
+        return self._tree.search(flight_id)
 
     # READ (all flights)
     def get_all_flights(self):
@@ -115,27 +88,7 @@ class Flight_Service:
         list[Flight]
             A list containing all Flight objects in sorted order.
         """
-        flights = []
-        self._inorder(self._tree.getRoot(), flights)
-        return flights
-
-    def _inorder(self, node, flights):
-        """
-        Performs an inorder traversal of the AVL tree.
-
-        Parameters
-        ----------
-        node : Flight
-            Current node being visited.
-        flights : list
-            List used to collect Flight objects during traversal.
-        """
-        if node is None:
-            return
-
-        self._inorder(node.getLeftChild(), flights)
-        flights.append(node)
-        self._inorder(node.getRightChild(), flights)
+        return self._tree.inOrderTraversal()
 
     # UPDATE
     def update_flight(self, flight_id, **kwargs):
@@ -197,15 +150,31 @@ class Flight_Service:
 
     def undo(self):
         if self._history.is_empty():
-            raise Exception("The queue is empty")
+            raise Exception("The history is empty")
 
         action = self._history.pop()
 
         if action[0] == "delete":
-            self._tree.delete(action[1])
-
+            # Re-insert the flight
+            self._tree.insert(action[1])
         elif action[0] == "insert":
-            pass
+            # Delete the flight (undo creation)
+            self._tree.delete(action[1].getValue())
+        elif action[0] == "update":
+            # Revert the old values
+            flight_id, old_values = action[1], action[2]
+            flight = self.get_flight(flight_id)
+            if flight:
+                if "origin" in old_values:
+                    flight.setOrigin(old_values["origin"])
+                if "destiny" in old_values:
+                    flight.setDestiny(old_values["destiny"])
+                if "basePrice" in old_values:
+                    flight.setBasePrice(old_values["basePrice"])
+                if "finalPrice" in old_values:
+                    flight.setFinalPrice(old_values["finalPrice"])
+                if "passengers" in old_values:
+                    flight.setPassengers(old_values["passengers"])
 
     def multi_inserts(self, flights_list):
         """

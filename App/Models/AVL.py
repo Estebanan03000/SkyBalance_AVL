@@ -1,6 +1,4 @@
-from BST import BST
-
-
+from App.Models.BST import BST
 
 class AVL(BST):
     def __init__(self):
@@ -209,3 +207,21 @@ class AVL(BST):
 
     # -----------------------------------------------------------
     # END OF AVL TREE BALANCING METHODS
+
+    # Public method to delete a node by value, using inheritance from BST and adding balancing
+    def delete(self, value):
+        if self._root is None:
+            print("El árbol está vacío.")
+            return
+        node = self.search(value)
+        if node is None:
+            print(f"El valor {value} no se encuentra en el árbol.")
+            return
+        parent = node.getParent()
+        # Call the parent's delete method to handle the basic deletion logic
+        super().delete(value)
+        # After deletion, check balance from the parent
+        if parent is not None:
+            self.checkBalance(parent)
+        elif self._root is not None:
+            self.checkBalance(self._root)

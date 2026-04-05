@@ -18,7 +18,7 @@ class Metrics_Service:
         return leaves
 
     def RotationCounter(self):
-        rotations = self._service._tree.getRotationCounts()
+        rotations = self._Service._tree.getRotationCounts()
         print("Rotation counts:")
         for rot_type, count in rotations.items():
             print(f"{rot_type}: {count}")

@@ -1,5 +1,5 @@
-from Flight import Flight
-from Queue import Queue
+from App.Models.Flight import Flight
+from App.Models.Queue import Queue
 
 class BST:
     def __init__(self):
