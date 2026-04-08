@@ -3,6 +3,8 @@ from App.Services.Flight_Service import Flight_Service
 from App.Models.Flight import Flight
 from datetime import datetime
 
+from Services.Metrics_Service import Metrics_Service
+
 # Create an instance of the Flight_Service
 # This instance will remain in memory while the app is running
 flight_service = Flight_Service()
@@ -189,3 +191,31 @@ def insert_flight():
     # Llama a multi_inserts con una lista de un solo elemento
     reports = flight_service.multi_inserts([flight])
     return jsonify(reports[0]), 200  # Devuelve solo el reporte del vuelo
+
+
+@main_routes.route("/metrics", methods=["GET"])
+def get_metrics():
+    """
+    Endpoint to get real-time metrics of the flight tree.
+
+    Flow:
+    1. Calls the getRealTimeMetrics() method of Metrics_Service to retrieve
+       a dictionary containing the current metrics.
+    2. Returns these metrics as JSON.
+
+    Returned Metrics:
+    {
+        "leaves": int,                   # Number of leaf nodes
+        "height": int,                   # Height of the tree
+        "rotations": dict,               # Number of AVL rotations
+        "massive_cancelations": int      # Total flights canceled massively
+    }
+
+    HTTP Status Codes:
+    - 200 OK if metrics are successfully retrieved
+
+    """
+    metrics_data = Metrics_Service.getRealTimeMetrics()
+    
+    # Devolver JSON
+    return jsonify(metrics_data)
