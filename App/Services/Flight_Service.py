@@ -5,6 +5,7 @@ from App.Models.BST import BST
 from App.Models.Queue import Queue
 import json
 
+
 class Flight_Service:
     """
     Service class responsible for performing CRUD operations on Flight objects
@@ -22,13 +23,14 @@ class Flight_Service:
     - Remove flights from the AVL tree
     """
 
-    def __init__(self, mode = "Global Balance"):
+    def __init__(self, mode="Global Balance"):
         """
         Initializes the Flight_Service with an empty AVL tree and an empty Stack to undo operations
         """
         self._history = Stack()
         self._mode = mode
-        # Inicializar el árbol según el modo
+        self._max_depth = None  # It is configured before loading the JSON
+        # Initialize the tree according to the mode
         if mode == "Stress":
             self._tree = BST()
         else:
@@ -38,12 +40,12 @@ class Flight_Service:
         if mode == "Stress":
             self._tree = BST()
         else:
-            # Obtener todos los vuelos del árbol actual antes de cambiar
+            # Get all flights in the current tree before changing
             old_flights = self.get_all_flights()
             self._tree = AVL()
             for flight in old_flights:
                 self._tree.insert(flight)
-                
+
     # CREATE
     def create_flight(self, flight: Flight):
         """
@@ -58,6 +60,7 @@ class Flight_Service:
         """
         self._tree.insert(flight)
         self._history.push(("delete", flight.getValue()))
+        self.applyDepthPenalty()  # the new flight could cause depth changes, so we recalculate penalties after each insertion
 
     # READ (single flight)
     def get_flight(self, flight_id):
@@ -121,7 +124,7 @@ class Flight_Service:
             old_values["passengers"] = flight.getPassengers()
             flight.setPassengers(kwargs["passengers"])
 
-        # 🔹 Guardar en la pila SOLO si hubo cambios
+        # Save to the stack ONLY if there were changes
         if old_values:
             self._history.push(("update", flight_id, old_values))
 
@@ -143,7 +146,7 @@ class Flight_Service:
         flight = self.get_flight(flight_id)
 
         if flight is None:
-                raise Exception("Flight not found")
+            raise Exception("Flight not found")
 
         self._tree.delete(flight_id)
         self._history.push(("insert", flight))
@@ -183,11 +186,11 @@ class Flight_Service:
         report_list = []
         queue = Queue()
 
-        # Encolar todos los vuelos recibidos
+        # Queue all incoming flights
         for flight in flights_list:
             queue.enqueue(flight)
 
-        # Procesar la cola
+        # Process the queue
         while not queue.is_empty():
             flight = queue.dequeue()
             report = self._insert_with_report(flight)
@@ -227,41 +230,63 @@ class Flight_Service:
                 "origin": flight.getOrigin(),
                 "destiny": flight.getDestiny(),
                 "conflict_type": rotation_detected,
-                "rotation_applied": rotation_detected
+                "rotation_applied": rotation_detected,
             }
         else:
             return {
                 "status": "ok",
                 "flight_id": flight.getValue(),
                 "origin": flight.getOrigin(),
-                "destiny": flight.getDestiny()
+                "destiny": flight.getDestiny(),
             }
 
-
-    # ==================== EXPORTACIÓN ====================
-    # Método para guardar el árbol completo en archivo JSON
+    # ==================== EXPORT ====================
+    # Method to save the entire tree to a JSON file
 
     def export_tree_to_json(self, filename):
         """
         Exporta el árbol completo a un archivo JSON.
         Guarda la estructura jerárquica del árbol incluyendo todas las propiedades
         de cada vuelo, alturas y factores de balance (si es AVL).
-        
+
         Parámetros:
             filename: Nombre o ruta del archivo donde guardar el JSON
-        
+
         Retorna:
             bool: True si la exportación fue exitosa, False si hay error
         """
         try:
-            # Serializar el árbol a diccionario
+            # Serialize the tree to a dictionary
             tree_data = self._tree.serialize_to_dict()
-            
-            # Guardar en archivo JSON con formato legible (indent=2)
-            with open(filename, 'w', encoding='utf-8') as f:
+
+            # Save to JSON file with readable format (indent=2)
+            with open(filename, "w", encoding="utf-8") as f:
                 json.dump(tree_data, f, indent=2, ensure_ascii=False)
-            
+
             return True
         except Exception as e:
             print(f"Error al exportar árbol: {str(e)}")
             return False
+
+    def applyDepthPenalty(self):
+        if self._max_depth is None:
+            return
+
+        flights = self.get_all_flights()
+
+        if not flights:  # Avoid processing if there are no flights in the tree
+            return
+
+        for flight in flights:
+            depth = self._tree.getNodeDepth(flight)
+
+            if depth > self._max_depth:
+                flight.setIsCritical(True)
+                flight.setFinalPrice(flight.getBasePrice() * 1.25)
+            else:
+                flight.setIsCritical(False)
+                flight.setFinalPrice(flight.getBasePrice())
+
+    def setMaxDepth(self, depth):
+        self._max_depth = depth
+        self.applyDepthPenalty()  # Recalulate penalties immediately after setting max depth

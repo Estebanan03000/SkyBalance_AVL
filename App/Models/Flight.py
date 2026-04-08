@@ -20,7 +20,19 @@ class Flight:
         Getters: Retrieve values for all flight attributes and tree node references.
         Setters: Modify values for all flight attributes and tree node references.
     """
-    def __init__(self, id, origin, destiny, departureTime, basePrice, finalPrice, passengers, promotion, alert):
+
+    def __init__(
+        self,
+        id,
+        origin,
+        destiny,
+        departureTime,
+        basePrice,
+        finalPrice,
+        passengers,
+        promotion,
+        alert,
+    ):
         self._id = id
         self._origin = origin
         self._destiny = destiny
@@ -33,6 +45,8 @@ class Flight:
         self._parent = None
         self._leftChild = None
         self._rightChild = None
+        # Flag to indicate if the flight is critical (used for depth penalty)
+        self._isCritical = False
 
     def getValue(self):
         return self._id
@@ -63,13 +77,13 @@ class Flight:
 
     def getParent(self):
         return self._parent
-    
+
     def getLeftChild(self):
         return self._leftChild
-    
+
     def getRightChild(self):
         return self._rightChild
-    
+
     def setValue(self, id):
         self._id = id
 
@@ -105,3 +119,9 @@ class Flight:
 
     def setRightChild(self, rightChild):
         self._rightChild = rightChild
+
+    def getIsCritical(self):
+        return self._isCritical
+
+    def setIsCritical(self, val):
+        self._isCritical = val

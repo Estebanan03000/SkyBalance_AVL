@@ -12,6 +12,7 @@ flight_service = Flight_Service()
 # Create a Flask blueprint to organize routes
 main_routes = Blueprint("main", __name__)
 
+
 # ===============================
 # GET /flights - List all flights
 # ===============================
@@ -30,7 +31,7 @@ def list_flights():
             - passengers: Number of passengers
     """
     flights = flight_service.get_all_flights()
-    
+
     # Convert Flight objects to dictionaries for JSON serialization
     flights_data = [
         {
@@ -39,7 +40,7 @@ def list_flights():
             "destiny": f.getDestiny(),
             "basePrice": f.getBasePrice(),
             "finalPrice": f.getFinalPrice(),
-            "passengers": f.getPassengers()
+            "passengers": f.getPassengers(),
         }
         for f in flights
     ]
@@ -69,7 +70,7 @@ def create_flight():
         JSON message confirming the creation with HTTP status 201.
     """
     data = request.get_json()
-    
+
     flight = Flight(
         data["id"],
         data["origin"],
@@ -79,9 +80,9 @@ def create_flight():
         data["finalPrice"],
         data["passengers"],
         data.get("discount", 0),
-        data.get("sold", False)
+        data.get("sold", False),
     )
-    
+
     flight_service.create_flight(flight)
     return jsonify({"message": "Flight created"}), 201
 
@@ -139,36 +140,39 @@ def delete_flight(flight_id):
 def export_tree():
     """
     Endpoint to export the complete AVL tree structure to a JSON file.
-    
+
     Guarda la estructura jerárquica completa del árbol, preservando:
         - Estructura padre-hijo de cada nodo
         - Altura de cada nodo
         - Factor de equilibrio (si es AVL)
         - Todos los datos del vuelo (precio, pasajeros, promociones, alertas, etc.)
-    
+
     Expects JSON in request body:
         - filename: Name or path of the JSON file to create
                     Example: "tree_backup.json"
-    
+
     Returns:
         JSON message confirming successful export, or error message
     """
     try:
         data = request.get_json()
         filename = data.get("filename", "tree_export.json")
-        
+
         # Exportar el árbol
         success = flight_service.export_tree_to_json(filename)
-        
+
         if success:
-            return jsonify({"message": f"Árbol exportado exitosamente a {filename}"}), 200
+            return (
+                jsonify({"message": f"Árbol exportado exitosamente a {filename}"}),
+                200,
+            )
         else:
             return jsonify({"error": "Error al exportar el árbol"}), 500
-            
+
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-    
-    
+
+
 @main_routes.route("/flights/insert", methods=["POST"])
 def insert_flight():
     """
@@ -185,7 +189,7 @@ def insert_flight():
         data["finalPrice"],
         data["passengers"],
         data.get("discount", 0),
-        data.get("sold", False)
+        data.get("sold", False),
     )
 
     # Llama a multi_inserts con una lista de un solo elemento
@@ -216,6 +220,15 @@ def get_metrics():
 
     """
     metrics_data = Metrics_Service.getRealTimeMetrics()
-    
+
     # Devolver JSON
     return jsonify(metrics_data)
+
+
+@main_routes.route("/config/max-depth", methods=["PUT"])
+def set_max_depth():
+    data = request.get_json()
+    flight_service.setMaxDepth(data["maxDepth"])
+    return jsonify(
+        {"message": "Depth penalty configuration updated and prices recalculated."}
+    )
