@@ -5,6 +5,7 @@ from App.Models.BST import BST
 from App.Models.Queue import Queue
 import json
 
+
 class Flight_Service:
     """
     Service class responsible for performing CRUD operations on Flight objects
@@ -22,13 +23,14 @@ class Flight_Service:
     - Remove flights from the AVL tree
     """
 
-    def __init__(self, mode = "Global Balance"):
+    def __init__(self, mode="Global Balance"):
         """
         Initializes the Flight_Service with an empty AVL tree and an empty Stack to undo operations
         """
         self._history = Stack()
         self._mode = mode
-        # Inicializar el árbol según el modo
+        self._max_depth = None  # It is configured before loading the JSON
+        # Initialize the tree according to the mode
         if mode == "Stress":
             self._tree = BST()
         else:
@@ -38,12 +40,12 @@ class Flight_Service:
         if mode == "Stress":
             self._tree = BST()
         else:
-            # Obtener todos los vuelos del árbol actual antes de cambiar
+            # Get all flights in the current tree before changing
             old_flights = self.get_all_flights()
             self._tree = AVL()
             for flight in old_flights:
                 self._tree.insert(flight)
-                
+
     # CREATE
     def create_flight(self, flight: Flight):
         """
@@ -58,6 +60,7 @@ class Flight_Service:
         """
         self._tree.insert(flight)
         self._history.push(("delete", flight.getValue()))
+        self.applyDepthPenalty()  # the new flight could cause depth changes, so we recalculate penalties after each insertion
 
     # READ (single flight)
     def get_flight(self, flight_id):
@@ -121,7 +124,7 @@ class Flight_Service:
             old_values["passengers"] = flight.getPassengers()
             flight.setPassengers(kwargs["passengers"])
 
-        # 🔹 Guardar en la pila SOLO si hubo cambios
+        # Save to the stack ONLY if there were changes
         if old_values:
             self._history.push(("update", flight_id, old_values))
 
@@ -143,7 +146,7 @@ class Flight_Service:
         flight = self.get_flight(flight_id)
 
         if flight is None:
-                raise Exception("Flight not found")
+            raise Exception("Flight not found")
 
         self._tree.delete(flight_id)
         self._history.push(("insert", flight))
@@ -183,11 +186,11 @@ class Flight_Service:
         report_list = []
         queue = Queue()
 
-        # Encolar todos los vuelos recibidos
+        # Queue all incoming flights
         for flight in flights_list:
             queue.enqueue(flight)
 
-        # Procesar la cola
+        # Process the queue
         while not queue.is_empty():
             flight = queue.dequeue()
             report = self._insert_with_report(flight)
@@ -227,53 +230,17 @@ class Flight_Service:
                 "origin": flight.getOrigin(),
                 "destiny": flight.getDestiny(),
                 "conflict_type": rotation_detected,
-                "rotation_applied": rotation_detected
+                "rotation_applied": rotation_detected,
             }
         else:
             return {
                 "status": "ok",
                 "flight_id": flight.getValue(),
                 "origin": flight.getOrigin(),
-                "destiny": flight.getDestiny()
+                "destiny": flight.getDestiny(),
             }
-        
-    def Auditory_System(self, mode):
-        if mode == "Stress":
-            return self.get_all_flights()
-        return []
-    
-    def Auditory_report(self, nodes):
-        """
-        Genera un reporte detallado de cada nodo del árbol (AVL o BST en modo Stress),
-        indicando altura real, factor de balance y estado de consistencia AVL.
-        """
-        report = []
 
-        for node in nodes:
-            # Altura real calculada recursivamente
-            realHeight = self._tree.getHeightNode(node)
 
-            # Factor de balance calculado sobre la marcha
-            if isinstance(self._tree, AVL):
-                bf = self._tree.getBalanceFactor(node)
-            else:
-                # BST: calcular balance como diferencia de alturas de hijos
-                leftHeight = self._tree.getHeightNode(node.getLeftChild())
-                rightHeight = self._tree.getHeightNode(node.getRightChild())
-                bf = leftHeight - rightHeight
-
-            # Determinar estado AVL
-            status = "OK" if abs(bf) <= 1 else "Inconsistente (balance fuera de rango)"
-
-            # Agregar información al reporte
-            report.append({
-                "Node": node.getValue(),      # ID del vuelo o nodo
-                "Real Height": realHeight,
-                "Balance Factor": bf,
-                "AVL Status": status
-            })
-
-        return report
     # ==================== EXPORTACIÓN ====================
     # Método para guardar el árbol completo en archivo JSON
 
@@ -282,22 +249,135 @@ class Flight_Service:
         Exporta el árbol completo a un archivo JSON.
         Guarda la estructura jerárquica del árbol incluyendo todas las propiedades
         de cada vuelo, alturas y factores de balance (si es AVL).
-        
+
         Parámetros:
             filename: Nombre o ruta del archivo donde guardar el JSON
-        
+
         Retorna:
             bool: True si la exportación fue exitosa, False si hay error
         """
         try:
-            # Serializar el árbol a diccionario
+            # Serialize the tree to a dictionary
             tree_data = self._tree.serialize_to_dict()
-            
-            # Guardar en archivo JSON con formato legible (indent=2)
-            with open(filename, 'w', encoding='utf-8') as f:
+
+            # Save to JSON file with readable format (indent=2)
+            with open(filename, "w", encoding="utf-8") as f:
                 json.dump(tree_data, f, indent=2, ensure_ascii=False)
-            
+
             return True
         except Exception as e:
             print(f"Error al exportar árbol: {str(e)}")
             return False
+
+    def applyDepthPenalty(self):
+        if self._max_depth is None:
+            return
+
+        flights = self.get_all_flights()
+
+        if not flights:  # Avoid processing if there are no flights in the tree
+            return
+
+        for flight in flights:
+            depth = self._tree.getNodeDepth(flight)
+
+            if depth > self._max_depth:
+                flight.setIsCritical(True)
+                flight.setFinalPrice(flight.getBasePrice() * 1.25)
+            else:
+                flight.setIsCritical(False)
+                flight.setFinalPrice(flight.getBasePrice())
+
+    def setMaxDepth(self, depth):
+        self._max_depth = depth
+        self.applyDepthPenalty()  # Recalulate penalties immediately after setting max depth
+
+    def _calculateProfitability(self, flight):
+        # Base profitability: passengers multiplied by final price
+        profitability = flight.getPassengers() * flight.getFinalPrice()
+
+        # If the flight has an active promotion, subtract it from profitability
+        if flight.getPromotion() > 0:
+            profitability -= flight.getPromotion()
+
+        # If the node is critical (depth penalty active), subtract the 25% surcharge
+        if flight.getIsCritical():
+            profitability -= flight.getFinalPrice() - flight.getBasePrice()
+
+        return profitability
+
+    def _findLowestProfitability(self):
+        # Get all flights via inorder traversal
+        flights = self.get_all_flights()
+        if not flights:
+            return None
+
+        lowest = None
+        for flight in flights:
+            # First iteration: set the first flight as the current minimum
+            if lowest is None:
+                lowest = flight
+                continue
+
+            current_profit = self._calculateProfitability(flight)
+            lowest_profit = self._calculateProfitability(lowest)
+
+            # Primary criterion: lower profitability wins
+            if current_profit < lowest_profit:
+                lowest = flight
+            elif current_profit == lowest_profit:
+                current_depth = self._tree.getNodeDepth(flight)
+                lowest_depth = self._tree.getNodeDepth(lowest)
+
+                # Secondary criterion: if profitability is equal, take the deepest node
+                if current_depth > lowest_depth:
+                    lowest = flight
+                elif current_depth == lowest_depth:
+                    # Tertiary criterion: if depth is also equal, take the one with the largest ID
+                    if flight.getValue() > lowest.getValue():
+                        lowest = flight
+
+        return lowest
+
+    def _collectSubtree(self, flight, ids):
+        # Base case: if the node is None, stop recursion
+        if flight is None:
+            return
+        # Add the current node's ID to the list
+        ids.append(flight.getValue())
+        # Recursively collect IDs from the left subtree
+        self._collectSubtree(flight.getLeftChild(), ids)
+        # Recursively collect IDs from the right subtree
+        self._collectSubtree(flight.getRightChild(), ids)
+
+    def _deleteSubtree(self, flight):
+        # Collect all IDs in the subtree BEFORE deleting
+        # This is necessary because AVL rebalancing after each deletion
+        # may move nodes around, making references unreliable
+        ids = []
+        self._collectSubtree(flight, ids)
+
+        # Delete each node by ID — AVL rebalances automatically after each deletion
+        for flight_id in ids:
+            node = self._tree.search(flight_id)
+            if node:
+                self._tree.delete(flight_id)
+
+        # Recalculate depth penalties since tree structure has changed
+        self.applyDepthPenalty()
+
+    def deleteLowestProfitability(self):
+        # Find the least profitable node using all tiebreaker criteria
+        target = self._findLowestProfitability()
+
+        if target is None:
+            raise Exception("The tree is empty")
+
+        # Save the ID before deletion to return it to the caller
+        target_id = target.getValue()
+
+        # Delete the target node and its entire subtree
+        self._deleteSubtree(target)
+
+        # Return the deleted flight ID so the frontend knows which one was removed
+        return target_id

@@ -1,13 +1,14 @@
 from App.Models.Flight import Flight
 from App.Models.Queue import Queue
 
+
 class BST:
     def __init__(self):
         self._root = None
 
     def getRoot(self):
         return self._root
-    
+
     def setRoot(self, root):
         self._root = root
 
@@ -26,28 +27,28 @@ class BST:
         if node.getValue() == currentRoot.getValue():
             print(f"El valor del nodo {node.getValue()} ya existe en el árbol.")
         else:
-        # Check if the value to insert is greater than the current root
+            # Check if the value to insert is greater than the current root
             if node.getValue() > currentRoot.getValue():
-            # Check if a right child exists
+                # Check if a right child exists
                 if currentRoot.getRightChild() is None:
-            # If it has no right child, assign the node as right child
+                    # If it has no right child, assign the node as right child
                     currentRoot.setRightChild(node)
-            # And the new node will have the current root as parent
+                    # And the new node will have the current root as parent
                     node.setParent(currentRoot)
                 else:
-            # It already has a right child, so insertion should be processed from the right child
-            # Making the recursive call with that child
+                    # It already has a right child, so insertion should be processed from the right child
+                    # Making the recursive call with that child
                     self.__insert(currentRoot.getRightChild(), node)
             else:
-            # The value of the node to insert is less than the value of the current root
-            # Check if it has a left child
+                # The value of the node to insert is less than the value of the current root
+                # Check if it has a left child
                 if currentRoot.getLeftChild() is None:
-            # If it doesn't have one, assign the node as left child
+                    # If it doesn't have one, assign the node as left child
                     currentRoot.setLeftChild(node)
                     # And the new node is assigned the current root as parent
                     node.setParent(currentRoot)
                 else:
-            # If it has a left child, then recursively call with the left child and the node to insert.
+                    # If it has a left child, then recursively call with the left child and the node to insert.
                     self.__insert(currentRoot.getLeftChild(), node)
 
     # Method to search for a node by its value
@@ -65,24 +66,24 @@ class BST:
         # print(f"El valor del nodo es: {currentRoot.getValue()}")
         # print(f"Comparación: {currentRoot.getValue() == value}" )
         if currentRoot.getValue() == value:
-        # If so, return the current root
+            # If so, return the current root
             return currentRoot
         # Otherwise validate if we should go right or left
         elif value > currentRoot.getValue():
-        # If greater, verify that a right child exists
-        # If it doesn't exist, return None
+            # If greater, verify that a right child exists
+            # If it doesn't exist, return None
             if currentRoot.getRightChild() is None:
                 return None
             else:
-            # Pass the search request to the right child
+                # Pass the search request to the right child
                 return self.__search(currentRoot.getRightChild(), value)
         else:
-        # If less, verify that a left child exists
-        # If it doesn't exist, return None
+            # If less, verify that a left child exists
+            # If it doesn't exist, return None
             if currentRoot.getLeftChild() is None:
                 return None
             else:
-            # Pass the search request to the left child
+                # Pass the search request to the left child
                 return self.__search(currentRoot.getLeftChild(), value)
 
     # Method for breadth-first traversal
@@ -136,7 +137,6 @@ class BST:
         if currentRoot.getRightChild() is not None:
             self.__preOrderTraversal(currentRoot.getRightChild(), result)
 
-
     # Method for depth-first traversal type In-Order
     def inOrderTraversal(self):
         # Validate if the tree is empty and show message
@@ -168,9 +168,9 @@ class BST:
         if self._root is None:
             print("El árbol está vacío.")
         else:
-        # If the tree is not empty, generate a result that will have the traversal at the end
+            # If the tree is not empty, generate a result that will have the traversal at the end
             result = []
-        # Start the recursive call from the tree root
+            # Start the recursive call from the tree root
             self.__posOrderTraversal(self._root, result)
             return result
 
@@ -226,7 +226,7 @@ class BST:
         else:
             # En caso contrario, asignar el hijo derecho
             child = node.getRightChild()
-        
+
         # Determinar si el hijo debe ser asignado como hijo izquierdo o derecho del padre
         # Comparar el valor del hijo con el del padre del nodo a eliminar
         if child.getValue() < node.getParent().getValue():
@@ -235,10 +235,10 @@ class BST:
         else:
             # Si es mayor o igual, asignar como hijo derecho del padre
             node.getParent().setRightChild(child)
-        
+
         # Actualizar la referencia del padre del hijo para que apunte al padre del nodo eliminado
         child.setParent(node.getParent())
-        
+
         # Limpiar todas las referencias del nodo a eliminar para liberarlo
         node.setParent(None)
         node.setLeftChild(None)
@@ -251,10 +251,10 @@ class BST:
         # Recorrer hacia la derecha hasta encontrar el nodo más a la derecha
         while successor.getRightChild() is not None:
             successor = successor.getRightChild()
-        
+
         # Reemplazar el valor del nodo a eliminar con el valor del sucesor
         node.setValue(successor.getValue())
-        
+
         # Eliminar recursivamente el sucesor (que tendrá a lo máximo un hijo izquierdo)
         self.__deleteNode(successor)
 
@@ -264,12 +264,12 @@ class BST:
     # 3. Node with 2 children
     def IdentifyDeletionCase(self, node):
         nodeCase = 2
-        if(node.getLeftChild() is None and node.getRightChild() is None):
+        if node.getLeftChild() is None and node.getRightChild() is None:
             nodeCase = 1
-        elif(node.getLeftChild() is not None and node.getRightChild() is not None):
+        elif node.getLeftChild() is not None and node.getRightChild() is not None:
             nodeCase = 3
         return nodeCase
-    
+
     # Method that allows calculating the height of a node
     def getHeightNode(self, node):
         if node is None:
@@ -291,7 +291,7 @@ class BST:
             maxHeight = max(leftHeight, rightHeight)
             # Increment by 1 when returning to parent to represent the edge that unites them
             return maxHeight + 1
-    
+
     # Method to draw the tree as a tree
     def print_tree(self):
         if self._root is None:
@@ -322,41 +322,41 @@ class BST:
             # If the data is None (leaf or empty), return None
             if data is None:
                 return None
-            
+
             # Create a Flight instance with the JSON fields
             # Maps 'codigo' to id, 'origen' to origin, etc.
             flight = Flight(
-                id=data['codigo'],
-                origin=data['origen'],
-                destiny=data['destino'],
-                departureTime=data['horaSalida'],
-                basePrice=data['precioBase'],
-                finalPrice=data['precioFinal'],
-                passengers=data['pasajeros'],
-                promotion=data['promocion'],
-                alert=data['alerta']
+                id=data["codigo"],
+                origin=data["origen"],
+                destiny=data["destino"],
+                departureTime=data["horaSalida"],
+                basePrice=data["precioBase"],
+                finalPrice=data["precioFinal"],
+                passengers=data["pasajeros"],
+                promotion=data["promocion"],
+                alert=data["alerta"],
             )
-            
+
             # Recursively build the left child by calling build_node with 'izquierdo'
-            flight.setLeftChild(build_node(data.get('izquierdo')))
-            
+            flight.setLeftChild(build_node(data.get("izquierdo")))
+
             # Recursively build the right child by calling build_node with 'derecho'
-            flight.setRightChild(build_node(data.get('derecho')))
-            
+            flight.setRightChild(build_node(data.get("derecho")))
+
             # If left child exists, assign this node as its parent
             if flight.getLeftChild():
                 flight.getLeftChild().setParent(flight)
-            
+
             # If right child exists, assign this node as its parent
             if flight.getRightChild():
                 flight.getRightChild().setParent(flight)
-            
+
             # Return the constructed node
             return flight
-        
+
         # Assign the tree root by calling build_node with the root data from JSON
         self._root = build_node(tree_data)
-    
+
     def get_all_nodes(self):
         nodes = []
         self.__inOrderTraversal(self._root, nodes)
@@ -376,7 +376,9 @@ class BST:
         if node.getLeftChild() is None and node.getRightChild() is None:
             return 1
         # Sum the leaves of the left and right subtrees
-        return self.__countLeaves(node.getLeftChild()) + self.__countLeaves(node.getRightChild())
+        return self.__countLeaves(node.getLeftChild()) + self.__countLeaves(
+            node.getRightChild()
+        )
 
     # Method to get the depth of the tree (height)
     def getDepth(self):
@@ -389,7 +391,7 @@ class BST:
         """
         Converts the complete tree to a dictionary to save as JSON.
         Preserves the complete hierarchical structure with all data.
-        
+
         Returns:
             dict: Nested dictionary representing the complete tree.
                   Each node contains: flight data + height + balance factor (if AVL)
@@ -401,17 +403,17 @@ class BST:
         """
         Recursive function that serializes a node and its subtrees.
         Processes each node and recursively calls its children.
-        
+
         Parameters:
             node: Current node to serialize (can be None)
-        
+
         Returns:
             dict or None: Dictionary with node data and children, or None if node is empty
         """
         # If the node is None, return None (base case of recursion)
         if node is None:
             return None
-        
+
         # Create dictionary with all flight data
         node_data = {
             "id": node.getValue(),
@@ -424,17 +426,26 @@ class BST:
             "promotion": node.getPromotion(),
             "alert": node.getAlert(),
         }
-        
+
         # If it is an AVL tree, add balancing information
         # (The AVL class inherits from BST so verify using isinstance)
         from AVL import AVL
+
         if isinstance(self, AVL):
             node_data["altura"] = self.getHeightNode(node)
             node_data["balanceFactor"] = self.getBalanceFactor(node)
-        
+
         # RECURSIVE calls to children
         # This is what builds the hierarchical structure
         node_data["izquierdo"] = self.__serialize_node(node.getLeftChild())
         node_data["derecho"] = self.__serialize_node(node.getRightChild())
-        
+
         return node_data
+
+    def getNodeDepth(self, node):
+        depth = 0
+        current = node
+        while current.getParent() is not None:
+            current = current.getParent()
+            depth += 1
+        return depth
