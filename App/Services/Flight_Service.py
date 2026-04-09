@@ -290,3 +290,93 @@ class Flight_Service:
     def setMaxDepth(self, depth):
         self._max_depth = depth
         self.applyDepthPenalty()  # Recalulate penalties immediately after setting max depth
+
+    def _calculateProfitability(self, flight):
+        # Base profitability: passengers multiplied by final price
+        profitability = flight.getPassengers() * flight.getFinalPrice()
+
+        # If the flight has an active promotion, subtract it from profitability
+        if flight.getPromotion() > 0:
+            profitability -= flight.getPromotion()
+
+        # If the node is critical (depth penalty active), subtract the 25% surcharge
+        if flight.getIsCritical():
+            profitability -= flight.getFinalPrice() - flight.getBasePrice()
+
+        return profitability
+
+    def _findLowestProfitability(self):
+        # Get all flights via inorder traversal
+        flights = self.get_all_flights()
+        if not flights:
+            return None
+
+        lowest = None
+        for flight in flights:
+            # First iteration: set the first flight as the current minimum
+            if lowest is None:
+                lowest = flight
+                continue
+
+            current_profit = self._calculateProfitability(flight)
+            lowest_profit = self._calculateProfitability(lowest)
+
+            # Primary criterion: lower profitability wins
+            if current_profit < lowest_profit:
+                lowest = flight
+            elif current_profit == lowest_profit:
+                current_depth = self._tree.getNodeDepth(flight)
+                lowest_depth = self._tree.getNodeDepth(lowest)
+
+                # Secondary criterion: if profitability is equal, take the deepest node
+                if current_depth > lowest_depth:
+                    lowest = flight
+                elif current_depth == lowest_depth:
+                    # Tertiary criterion: if depth is also equal, take the one with the largest ID
+                    if flight.getValue() > lowest.getValue():
+                        lowest = flight
+
+        return lowest
+
+    def _collectSubtree(self, flight, ids):
+        # Base case: if the node is None, stop recursion
+        if flight is None:
+            return
+        # Add the current node's ID to the list
+        ids.append(flight.getValue())
+        # Recursively collect IDs from the left subtree
+        self._collectSubtree(flight.getLeftChild(), ids)
+        # Recursively collect IDs from the right subtree
+        self._collectSubtree(flight.getRightChild(), ids)
+
+    def _deleteSubtree(self, flight):
+        # Collect all IDs in the subtree BEFORE deleting
+        # This is necessary because AVL rebalancing after each deletion
+        # may move nodes around, making references unreliable
+        ids = []
+        self._collectSubtree(flight, ids)
+
+        # Delete each node by ID — AVL rebalances automatically after each deletion
+        for flight_id in ids:
+            node = self._tree.search(flight_id)
+            if node:
+                self._tree.delete(flight_id)
+
+        # Recalculate depth penalties since tree structure has changed
+        self.applyDepthPenalty()
+
+    def deleteLowestProfitability(self):
+        # Find the least profitable node using all tiebreaker criteria
+        target = self._findLowestProfitability()
+
+        if target is None:
+            raise Exception("The tree is empty")
+
+        # Save the ID before deletion to return it to the caller
+        target_id = target.getValue()
+
+        # Delete the target node and its entire subtree
+        self._deleteSubtree(target)
+
+        # Return the deleted flight ID so the frontend knows which one was removed
+        return target_id
