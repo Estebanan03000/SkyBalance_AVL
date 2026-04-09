@@ -232,3 +232,16 @@ def set_max_depth():
     return jsonify(
         {"message": "Depth penalty configuration updated and prices recalculated."}
     )
+
+
+@main_routes.route("/flights/lowest-profitability", methods=["DELETE"])
+def delete_lowest_profitability():
+    try:
+        # Call the service method and get the ID of the deleted flight
+        flight_id = flight_service.deleteLowestProfitability()
+        return (
+            jsonify({"message": "Flight deleted successfully", "flight_id": flight_id}),
+            200,
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
