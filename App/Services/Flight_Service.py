@@ -241,21 +241,22 @@ class Flight_Service:
             }
         
     def Auditory_System(self, mode): 
-        if mode == "Stress": return self.get_all_flights() 
+        if mode == "Stress": 
+            return self.get_all_flights() 
         return []
     
     def Auditory_report(self, nodes):
         """
-        Genera un reporte detallado de cada nodo del árbol (AVL o BST en modo Stress),
-        indicando altura real, factor de balance y estado de consistencia AVL.
+        Generate a detailed report of each node of the three (AVL or BST on stress mode), 
+        showing real height, balance factor and the AVL status
         """
         report = []
 
         for node in nodes:
-            # Altura real calculada recursivamente
+            # RealHeight calculate in a recursive way 
             realHeight = self._tree.getHeightNode(node)
 
-            # Factor de balance calculado sobre la marcha
+            # Balance factor calculation
             if isinstance(self._tree, AVL):
                 bf = self._tree.getBalanceFactor(node)
             else:
@@ -264,12 +265,12 @@ class Flight_Service:
                 rightHeight = self._tree.getHeightNode(node.getRightChild())
                 bf = leftHeight - rightHeight
 
-            # Determinar estado AVL
+            # Determinate AVL status
             status = "OK" if abs(bf) <= 1 else "Inconsistente (balance fuera de rango)"
 
-            # Agregar información al reporte
+            # Append info of the node to the report
             report.append({
-                "Node": node.getValue(),      # ID del vuelo o nodo
+                "Node": node.getValue(),      # ID of the flight
                 "Real Height": realHeight,
                 "Balance Factor": bf,
                 "AVL Status": status
@@ -278,20 +279,23 @@ class Flight_Service:
         return report
 
 
-    # ==================== EXPORTACIÓN ====================
-    # Método para guardar el árbol completo en archivo JSON
+    # ==================== EXPORT ====================
+    # Method for saving the complete tree as an JSON file.
 
     def export_tree_to_json(self, filename):
         """
-        Exporta el árbol completo a un archivo JSON.
-        Guarda la estructura jerárquica del árbol incluyendo todas las propiedades
-        de cada vuelo, alturas y factores de balance (si es AVL).
+        Exports the entire tree to a JSON file.
 
-        Parámetros:
-            filename: Nombre o ruta del archivo donde guardar el JSON
+        Saves the hierarchical tree structure, including all properties
+        for each flight, altitudes, and balance factors (if AVL).
 
-        Retorna:
-            bool: True si la exportación fue exitosa, False si hay error
+        Parameters:
+
+        filename: Name or path of the file where the JSON will be saved
+
+        Returns:
+
+        bool: True if the export was successful, False if there was an error
         """
         try:
             # Serialize the tree to a dictionary

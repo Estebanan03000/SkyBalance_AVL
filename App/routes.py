@@ -172,11 +172,14 @@ def export_tree():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+# ===============================
+# POST /flights/insert  - single insert with multi-insert
+# ===============================
 
 @main_routes.route("/flights/insert", methods=["POST"])
 def insert_flight():
     """
-    Endpoint para insertar un solo vuelo usando multi_inserts.
+    Endpoint for insert one flight with multi-insert.
     """
     data = request.get_json()
 
@@ -192,10 +195,13 @@ def insert_flight():
         data.get("sold", False),
     )
 
-    # Llama a multi_inserts con una lista de un solo elemento
+    # Call to multi_inserts with a list of just an element
     reports = flight_service.multi_inserts([flight])
-    return jsonify(reports[0]), 200  # Devuelve solo el reporte del vuelo
+    return jsonify(reports[0]), 200  # Return only the report of the flight
 
+# ===============================
+# GET /metrics  - Obtain metrcis
+# ===============================
 
 @main_routes.route("/metrics", methods=["GET"])
 def get_metrics():
@@ -224,6 +230,9 @@ def get_metrics():
     # Devolver JSON
     return jsonify(metrics_data)
 
+# ===============================
+# PUT /config/max-depth  - Config limit height for the penalitation sistem
+# ===============================
 
 @main_routes.route("/config/max-depth", methods=["PUT"])
 def set_max_depth():
@@ -233,6 +242,9 @@ def set_max_depth():
         {"message": "Depth penalty configuration updated and prices recalculated."}
     )
 
+# ===============================
+# DELETE /flights/lowest-profitability - Inteligent elimination by economic impact
+# ===============================
 
 @main_routes.route("/flights/lowest-profitability", methods=["DELETE"])
 def delete_lowest_profitability():
@@ -245,3 +257,4 @@ def delete_lowest_profitability():
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+    
