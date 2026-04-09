@@ -236,8 +236,44 @@ class Flight_Service:
                 "origin": flight.getOrigin(),
                 "destiny": flight.getDestiny()
             }
+        
+    def Auditory_System(self, mode):
+        if mode == "Stress":
+            return self.get_all_flights()
+        return []
+    
+    def Auditory_report(self, nodes):
+        """
+        Genera un reporte detallado de cada nodo del árbol (AVL o BST en modo Stress),
+        indicando altura real, factor de balance y estado de consistencia AVL.
+        """
+        report = []
 
+        for node in nodes:
+            # Altura real calculada recursivamente
+            realHeight = self._tree.getHeightNode(node)
 
+            # Factor de balance calculado sobre la marcha
+            if isinstance(self._tree, AVL):
+                bf = self._tree.getBalanceFactor(node)
+            else:
+                # BST: calcular balance como diferencia de alturas de hijos
+                leftHeight = self._tree.getHeightNode(node.getLeftChild())
+                rightHeight = self._tree.getHeightNode(node.getRightChild())
+                bf = leftHeight - rightHeight
+
+            # Determinar estado AVL
+            status = "OK" if abs(bf) <= 1 else "Inconsistente (balance fuera de rango)"
+
+            # Agregar información al reporte
+            report.append({
+                "Node": node.getValue(),      # ID del vuelo o nodo
+                "Real Height": realHeight,
+                "Balance Factor": bf,
+                "AVL Status": status
+            })
+
+        return report
     # ==================== EXPORTACIÓN ====================
     # Método para guardar el árbol completo en archivo JSON
 
