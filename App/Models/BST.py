@@ -25,7 +25,9 @@ class BST:
     # Recursive method to insert a node when the tree has a root
     def __insert(self, currentRoot, node):
         if node.getValue() == currentRoot.getValue():
-            print(f"El valor del nodo {node.getValue()} ya existe en el árbol.")
+            print(
+                f"The value of the node {node.getValue()} already exists in the tree."
+            )
         else:
             # Check if the value to insert is greater than the current root
             if node.getValue() > currentRoot.getValue():
@@ -56,15 +58,13 @@ class BST:
     def search(self, value):
         # Validate if a root exists in the tree
         if self._root is None:
-            raise Exception("El árbol no tiene una raíz.")
+            raise Exception("The tree has no root.")
         else:
             return self.__search(self._root, value)
 
     # Recursive function to handle the search
     def __search(self, currentRoot, value):
         # Validate if the searched value equals the current root
-        # print(f"El valor del nodo es: {currentRoot.getValue()}")
-        # print(f"Comparación: {currentRoot.getValue() == value}" )
         if currentRoot.getValue() == value:
             # If so, return the current root
             return currentRoot
@@ -90,7 +90,7 @@ class BST:
     def breadthFirstSearch(self):
         # Check if the tree is empty
         if self._root is None:
-            print("El árbol está vacío.")
+            print("The tree is empty.")
         else:
             # Enqueue the root first
             queue = Queue()

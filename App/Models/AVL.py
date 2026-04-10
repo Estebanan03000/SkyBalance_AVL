@@ -1,5 +1,6 @@
 from App.Models.BST import BST
 
+
 class AVL(BST):
     def __init__(self):
         super().__init__()  # Call the constructor of the parent class (BST)
@@ -23,7 +24,9 @@ class AVL(BST):
     # Recursive method to insert a node when the tree has a root
     def __insert(self, currentRoot, node):
         if node.getValue() == currentRoot.getValue():
-            print(f"El valor del nodo {node.getValue()} ya existe en el árbol.")
+            print(
+                f"The value of the node {node.getValue()} already exists in the tree."
+            )
         else:
             # Check if the value to insert is greater than the current root
             if node.getValue() > currentRoot.getValue():
@@ -59,7 +62,7 @@ class AVL(BST):
     # Method to check the balancing of a tree from a node
     def checkBalance(self, node):
         if node is None:
-            raise Exception("EL nodo a balancear no es válido")
+            raise Exception("The node to be balanced is not valid")
         self.__checkBalance(node)
 
     # Recursive method to validate tree balancing
@@ -67,18 +70,16 @@ class AVL(BST):
         # Identify the parent before rotation to avoid confusion
         parent = node.getParent()
         bf = self.getBalanceFactor(node)
-        if abs(bf) > 1:
+        if abs(bf) > 1: # Bf is balance factor
             # Identify the imbalance case (LL, RR, RL, LR)
             bfCase = self.getBalanceCase(node, bf)
             match bfCase:
                 case "LL":
                     # Rotate the middle node to the right
                     self.__rotateRight(node)
-
                 case "RR":
                     # Rotate the middle node to the left
                     self.__rotateLeft(node)
-
                 case "LR":
                     # Rotate the left child
                     self.__rotateLeft(node.getLeftChild())
@@ -94,14 +95,10 @@ class AVL(BST):
         # Check that the parent is not None and proceed to balance it if required
         if parent is not None:
             self.__checkBalance(parent)
-        # Método para balancear un caso de desbalanceo LL
-        # elif node != self.__root:
-        # if node.getParent() is not None:
-        # self.__checkBalance(node.getParent())
 
-# Method for simple rotation to the right
+    # Method for simple rotation to the right
     def __rotateRight(self, topNode):
-        self._LL_count += 1 
+        self._LL_count += 1
         # Get the middle node
         middleNode = topNode.getLeftChild()
 
@@ -171,10 +168,10 @@ class AVL(BST):
     def getBalanceCase(self, node, bf):
         bfCase = ""
         # Negative case, goes by R
-        if bf < -1:
+        if bf < -1: #Bf is balance factor
             bfChild = self.getBalanceFactor(node.getRightChild())
             if bfChild < 0:
-                bfCase = "RR"  
+                bfCase = "RR"
             else:
                 bfCase = "RL"
                 self._RL_count += 1
@@ -187,16 +184,16 @@ class AVL(BST):
                 self._LR_count += 1
 
         return bfCase
-    
-    #Method to return the amount of rotations of each type
+
+    # Method to return the amount of rotations of each type
     def getRotationCounts(self):
         return {
             "RR": self._RR_count,
             "LL": self._LL_count,
             "RL": self._RL_count,
-            "LR": self._LR_count
+            "LR": self._LR_count,
         }
-            
+
     # Method to calculate the BF of a node
     def getBalanceFactor(self, node):
         if node is None:
@@ -211,11 +208,11 @@ class AVL(BST):
     # Public method to delete a node by value, using inheritance from BST and adding balancing
     def delete(self, value):
         if self._root is None:
-            print("El árbol está vacío.")
+            print("The tree is empty.")
             return
         node = self.search(value)
         if node is None:
-            print(f"El valor {value} no se encuentra en el árbol.")
+            print(f"The value {value} is not found in the tree.")
             return
         parent = node.getParent()
         # Call the parent's delete method to handle the basic deletion logic
