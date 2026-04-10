@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SkyBalance AVL</title>
+    <link rel="stylesheet" href="../Style/Components.css" />
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2>SkyBalance</h2>
+            <button>Cargar JSON</button>
+            <button>Guardar JSON</button>
+            <button>Versionar</button>
+            <button>Restaurar</button>
+
+            <hr>
+
+            <button>Modo Estrés</button>
+            <button>Rebalanceo Global</button>
+            <button>Verificar AVL</button>
+
+            <hr>
+
+            <button>Insertar Nodo</button>
+            <button>Eliminar Nodo</button>
+            <button>Cancelar Subárbol</button>
+            <button>Deshacer (Undo)</button>
+
+            <hr>
+
+            <button>Procesar Cola</button>
+            <button>Eliminar Menor Rentabilidad</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+
+            <!-- Header -->
+            <header class="header">
+                <h1>Gestión de Árbol AVL</h1>
+                <div class="status">
+                    <span class="badge active">Modo Normal</span>
+                </div>
+            </header>
+
+            <!-- Visualización del Árbol -->
+            <section class="tree-view">
+                <h3>Visualización del Árbol</h3>
+                <div id="tree-container">
+                    <!-- Aquí va tu árbol renderizado con JS -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Panel Derecho -->
+        <aside class="panel">
+
+            <h3>Métricas</h3>
+            <ul>
+                <li>Altura: <span id="altura">0</span></li>
+                <li>Hojas: <span id="hojas">0</span></li>
+                <li>Rotaciones: <span id="rotaciones">0</span></li>
+                <li>Cancelaciones: <span id="cancelaciones">0</span></li>
+            </ul>
+
+            <h3>Recorridos</h3>
+            <div class="recorridos">
+                <button>DFS</button>
+                <button>BFS</button>
+            </div>
+
+            <h3>Cola de Inserciones</h3>
+            <div class="queue">
+                <p>No hay inserciones pendientes</p>
+            </div>
+
+        </aside>
+
+    </div>
+
+</body>
+</html>
