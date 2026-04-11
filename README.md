@@ -1,67 +1,58 @@
 # SkyBalance_AVL
 
-# Description
-System that manages data structures such as AVL, BST, stacks, and queues,
-allowing operations on flights loaded from JSON files.
+## Description
+Flight management system built on AVL and BST tree structures. Flights are
+loaded from JSON files, stored in a self-balancing AVL tree, and exposed
+through a Flask REST API. Includes depth-based pricing penalties, intelligent
+deletion by economic impact, undo history, and real-time tree metrics.
+
+## Requirements
+- Python 3.10+
+- Flask: `pip install flask`
 
 ## Execution
-... How to run it...
+```bash
+python app.py
+```
+Server starts at `http://localhost:5000`.
 
 ## Project Structure
-
 App/
-│
 ├── Models/
-│   ├── AVL.py          # AVL tree implementation
-│   ├── BST.py          # Binary search tree
-│   ├── Flight.py       # Flight data model
-│   ├── JSON.py         # JSON file handling
-│   ├── Queue.py        # Queue implementation
-│   ├── Stack.py        # Stack implementation
-│
+│   ├── AVL.py              # AVL tree with automatic balancing
+│   ├── BST.py              # Binary search tree, base class for AVL
+│   ├── Flight.py           # Flight node with tree pointers
+│   ├── JSON.py             # JSON loader (insertion and topology formats)
+│   ├── Queue.py            # FIFO queue
+│   └── Stack.py            # LIFO stack for undo history
 ├── Services/
-│   ├── Flight_Service.py   # Logic for managing flights
-│   ├── Metrics_Service.py  # Metrics calculation
-│
-├── routes.py          # Route definitions (interaction)
-├── app.py             # System entry point
+│   ├── Flight_Service.py   # CRUD, undo, depth penalty, export
+│   └── Metrics_Service.py  # Height, leaves, rotations, cancellations
+├── routes.py               # Flask API endpoints
+└── app.py                  # Entry point
 
+## JSON Input Formats
 
-## System Flow
+**Insertion** — list of flights, inserted one by one into AVL and BST:
+```json
+{ "flights": [{ "codigo": 10, "origen": "Bogotá", "destino": "Medellín",
+  "horaSalida": "08:00", "precioBase": 100.0, "precioFinal": 120.0,
+  "pasajeros": 150, "promocion": 0.1, "alerta": false }] }
+```
 
-1. The system starts from app.py
-2. Data is loaded from JSON files
-3. Flights are stored in structures such as AVL or BST
-4. Services process the information (metrics, queries)
-5. The user interacts through defined routes
+**Topology** — pre-built tree structure, reconstructed as-is:
+```json
+{ "codigo": 10, ..., "izquierdo": { ... }, "derecho": { ... } }
+```
 
-## Main Components
-
-- AVL: Used to keep data balanced and ensure efficient searches
-- BST: Base implementation for performance comparison
-- Queue: Handles processes in FIFO order
-- Stack: Supports auxiliary operations or traversals
-
-## Input Data
-
-The system loads information from JSON files containing flight data.
-
-Example structure:
-{
-    "codigo": 10,
-    "origen": "Bogotá",
-    "destino": "Medellín",
-    "horaSalida": "08:00",
-    "precioBase": 100.0,
-    "precioFinal": 120.0,
-    "pasajeros": 150,
-    "promocion": 0.1,
-    "alerta": false
-}
-
-## Functionalities
-
-- Load flights from JSON files
-- Insert data into AVL and BST structures
-- Query flight information
-- Calculate system metrics
+## API Endpoints
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/flights` | List all flights |
+| POST | `/flights` | Insert a flight |
+| PUT | `/flights/<id>` | Update a flight |
+| DELETE | `/flights/<id>` | Delete a flight |
+| DELETE | `/flights/lowest-profitability` | Delete least profitable subtree |
+| GET | `/metrics` | Real-time tree metrics |
+| PUT | `/config/max-depth` | Set depth penalty threshold |
+| POST | `/tree/export` | Export full tree to JSON |
