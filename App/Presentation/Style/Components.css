@@ -1,3 +1,4 @@
+/* Global reset and base styles for the SkyBalance frontend */
 * {
     margin: 0;
     padding: 0;
@@ -64,7 +65,7 @@ body {
     background-color: #22c55e;
 }
 
-/* Árbol */
+/* Tree visualization section styles */
 .tree-view {
     background: #1e293b;
     padding: 20px;
@@ -74,11 +75,30 @@ body {
 
 #tree-container {
     margin-top: 20px;
-    height: 100%;
+    min-height: 150px;
     border: 2px dashed #334155;
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 10px;
+    overflow-x: auto;
+}
+
+.tree-nodes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.tree-node {
+    min-width: 80px;
+    padding: 12px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(15, 23, 42, 0.25);
 }
 
 /* Panel derecho */
@@ -109,7 +129,7 @@ body {
     cursor: pointer;
 }
 
-/* Cola */
+/* Queue section styles */
 .queue {
     background: #0f172a;
     padding: 10px;

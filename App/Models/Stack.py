@@ -1,4 +1,6 @@
 class Stack:
+    """Simple LIFO stack implementation used for undo history."""
+
     def __init__(self):
         self._data = []  # _data is the list where the elements are stored
 

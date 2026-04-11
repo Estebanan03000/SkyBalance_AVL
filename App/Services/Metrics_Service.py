@@ -1,5 +1,5 @@
-#Metrics_Service is the service in charge to give in real time the metrics related to the tree, like deep traversals
-#Amount of leaves, etc.
+# Metrics_Service provides real-time metrics for the current flight tree.
+# It calculates leaf count, tree height, rotation totals, and massive cancellation totals.
 
 
 class Metrics_Service:
@@ -8,32 +8,35 @@ class Metrics_Service:
         self._Service = flight_service
         self._cancelations = []
 
-    #Method that counts and show the amount of nodes type leaf that exist on the tree
     def LeavesCounter(self):
+        """Return the number of leaf nodes in the current tree."""
         leaves = 0
         flights = self._Service.get_all_flights()
 
         for flight in flights:
             if flight.getLeftChild() is None and flight.getRightChild() is None:
                 leaves += 1
-        
+
         return leaves
 
     def RotationCounter(self):
+        """Return the rotation counts from the underlying tree implementation."""
         rotations = self._Service._tree.getRotationCounts()
         print("Rotation counts:")
         for rot_type, count in rotations.items():
             print(f"{rot_type}: {count}")
         return rotations
-    
+
     def TreeHeight(self):
+        """Return the height of the current tree."""
         root = self._Service._tree._root
         return self._Service._tree.getHeightNode(root)
 
     def massiveCancelation(self, node):
+        """Delete the subtree rooted at the given node and track massive cancellations."""
         if node is None:
             raise Exception("Node to delete doesn't exist on the tree")
-        
+
         result = []
         self._getChilds(node, result)
 
@@ -46,8 +49,9 @@ class Metrics_Service:
             self._cancelations.append(deleted_count)
 
         return deleted_count
-        
+
     def _getChilds(self, currentNode, result):
+        """Collect all nodes in a subtree in depth-first order."""
         if currentNode is None:
             return
 
@@ -60,14 +64,16 @@ class Metrics_Service:
         result.append(currentNode)
 
     def total_flights_canceled_massively(self):
+        """Return the cumulative count of massive cancellation events."""
         return sum(self._cancelations)
 
     def getRealTimeMetrics(self):
+        """Return a dictionary with the current tree metrics for the frontend."""
         return {
             "leaves": self.LeavesCounter(),
             "height": self.TreeHeight(),
             "rotations": self.RotationCounter(),
-            "massive_cancelations": self.total_flights_canceled_massively()
+            "massive_cancelations": self.total_flights_canceled_massively(),
         }
 
         

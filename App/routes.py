@@ -1,16 +1,57 @@
+import os
+import json
 from flask import Blueprint, request, jsonify
 from App.Services.Flight_Service import Flight_Service
 from App.Models.Flight import Flight
 from datetime import datetime
+from App.Services.Metrics_Service import Metrics_Service
 
-from Services.Metrics_Service import Metrics_Service
-
-# Create an instance of the Flight_Service
-# This instance will remain in memory while the app is running
+# Create an instance of the Flight_Service and Metrics_Service.
+# These will stay in memory while the Flask application is running.
 flight_service = Flight_Service()
+metrics_service = Metrics_Service(flight_service)
 
-# Create a Flask blueprint to organize routes
+# Create a Flask blueprint to group the application's API routes.
 main_routes = Blueprint("main", __name__)
+
+
+def _build_flight_from_payload(data):
+    """Build a Flight instance from a JSON payload.
+
+    This helper accepts alternate field names so the same payload can work with
+    English or Spanish keys from different data sources.
+    """
+    date_value = data.get("date") or data.get("departureTime") or data.get("horaSalida")
+    if isinstance(date_value, str) and "T" in date_value:
+        # Accept ISO-like datetime strings and parse them directly.
+        date_value = datetime.fromisoformat(date_value)
+
+    return Flight(
+        data.get("id") or data.get("codigo"),
+        data.get("origin") or data.get("origen"),
+        data.get("destiny") or data.get("destino"),
+        date_value,
+        data.get("basePrice") or data.get("precioBase"),
+        data.get("finalPrice") or data.get("precioFinal"),
+        data.get("passengers") or data.get("pasajeros"),
+        data.get("discount", data.get("promotion", data.get("promocion", 0))),
+        data.get("sold", data.get("alert", data.get("alerta", False))),
+    )
+
+
+def _load_flights_from_json_object(json_data):
+    """Load flight records from a decoded JSON object.
+
+    The JSON object must contain a top-level 'flights' array.
+    """
+    if "flights" not in json_data:
+        raise ValueError("JSON must include a top-level 'flights' array")
+
+    flight_list = []
+    for item in json_data["flights"]:
+        flight_list.append(_build_flight_from_payload(item))
+
+    return flight_list
 
 
 # ===============================
@@ -107,6 +148,7 @@ def update_flight(flight_id):
     data = request.get_json()
     try:
         flight_service.update_flight(flight_id, **data)
+        flight_service.applyDepthPenalty()
         return jsonify({"message": "Flight updated"})
     except Exception as e:
         return jsonify({"error": str(e)}), 404
@@ -128,6 +170,7 @@ def delete_flight(flight_id):
     """
     try:
         flight_service.delete_flight(flight_id)
+        flight_service.applyDepthPenalty()
         return jsonify({"message": "Flight deleted"})
     except Exception as e:
         return jsonify({"error": str(e)}), 404
@@ -141,33 +184,30 @@ def export_tree():
     """
     Endpoint to export the complete AVL tree structure to a JSON file.
 
-    Guarda la estructura jerárquica completa del árbol, preservando:
-        - Estructura padre-hijo de cada nodo
-        - Altura de cada nodo
-        - Factor de equilibrio (si es AVL)
-        - Todos los datos del vuelo (precio, pasajeros, promociones, alertas, etc.)
+    The exported JSON preserves the hierarchical parent-child structure,
+    node heights, balance factors (for AVL), and all flight details.
 
     Expects JSON in request body:
         - filename: Name or path of the JSON file to create
                     Example: "tree_backup.json"
 
     Returns:
-        JSON message confirming successful export, or error message
+        JSON message confirming successful export, or an error message.
     """
     try:
         data = request.get_json()
         filename = data.get("filename", "tree_export.json")
 
-        # Exportar el árbol
+        # Export the tree to disk
         success = flight_service.export_tree_to_json(filename)
 
         if success:
             return (
-                jsonify({"message": f"Árbol exportado exitosamente a {filename}"}),
+                jsonify({"message": f"Tree exported successfully to {filename}"}),
                 200,
             )
         else:
-            return jsonify({"error": "Error al exportar el árbol"}), 500
+            return jsonify({"error": "Failed to export tree"}), 500
 
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -175,8 +215,10 @@ def export_tree():
 
 @main_routes.route("/flights/insert", methods=["POST"])
 def insert_flight():
-    """
-    Endpoint para insertar un solo vuelo usando multi_inserts.
+    """Insert a single flight using the bulk insertion service.
+
+    This endpoint wraps the existing multi_inserts logic so the frontend can
+    insert one flight with the same reporting behavior.
     """
     data = request.get_json()
 
@@ -192,41 +234,153 @@ def insert_flight():
         data.get("sold", False),
     )
 
-    # Llama a multi_inserts con una lista de un solo elemento
+    # Use multi_inserts to preserve rotation report generation.
     reports = flight_service.multi_inserts([flight])
-    return jsonify(reports[0]), 200  # Devuelve solo el reporte del vuelo
+    return jsonify(reports[0]), 200
+
+
+@main_routes.route("/tree/load", methods=["POST"])
+def load_tree():
+    """Load flight data from a server-side JSON file and insert into the tree."""
+    try:
+        data = request.get_json() or {}
+        filename = data.get("filename", "App/Models/prueba_insercion.json")
+        path = filename if os.path.isabs(filename) else os.path.join(os.getcwd(), filename)
+
+        with open(path, "r", encoding="utf-8") as f:
+            payload = json.load(f)
+
+        flights = _load_flights_from_json_object(payload)
+        reports = flight_service.multi_inserts(flights)
+        return jsonify({"message": "JSON loaded successfully", "reports": reports}), 200
+    except FileNotFoundError:
+        return jsonify({"error": f"File not found: {filename}"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@main_routes.route("/tree/upload", methods=["POST"])
+def upload_tree():
+    """Upload a JSON file from the frontend and insert its flights into the tree."""
+    try:
+        if "file" not in request.files:
+            return jsonify({"error": "No file uploaded"}), 400
+
+        file = request.files["file"]
+        payload = json.load(file)
+        flights = _load_flights_from_json_object(payload)
+        reports = flight_service.multi_inserts(flights)
+        return jsonify({"message": "Uploaded JSON file successfully", "reports": reports}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@main_routes.route("/tree/undo", methods=["POST"])
+def undo_action():
+    """Undo the last flight operation stored in the history stack."""
+    try:
+        flight_service.undo()
+        return jsonify({"message": "Action undone"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@main_routes.route("/tree/cancel-subtree", methods=["POST"])
+def cancel_subtree():
+    """Cancel a subtree starting at the given flight node."""
+    data = request.get_json() or {}
+    flight_id = data.get("id")
+    if flight_id is None:
+        return jsonify({"error": "Flight id is required"}), 400
+
+    node = flight_service.get_flight(flight_id)
+    if node is None:
+        return jsonify({"error": "Flight not found"}), 404
+
+    deleted_count = metrics_service.massiveCancelation(node)
+    return jsonify({"message": "Subtree canceled", "deleted_count": deleted_count}), 200
+
+
+@main_routes.route("/config/mode", methods=["PUT"])
+def switch_mode():
+    """Switch the tree implementation mode between Stress (BST) and Global Balance (AVL)."""
+    data = request.get_json() or {}
+    mode = data.get("mode")
+    if mode not in ["Stress", "Global Balance"]:
+        return jsonify({"error": "Invalid mode. Use 'Stress' or 'Global Balance'"}), 400
+
+    flight_service.set_mode(mode)
+    return jsonify({"message": f"Mode switched to {mode}"}), 200
+
+
+@main_routes.route("/tree/verify", methods=["GET"])
+def verify_tree():
+    """Verify the current tree balance and identify inconsistent nodes."""
+    tree = flight_service._tree
+    flights = flight_service.get_all_flights()
+    inconsistent = []
+
+    for node in flights:
+        left_height = tree.getHeightNode(node.getLeftChild())
+        right_height = tree.getHeightNode(node.getRightChild())
+        if abs(left_height - right_height) > 1:
+            inconsistent.append(node.getValue())
+
+    return jsonify(
+        {
+            "balanced": len(inconsistent) == 0,
+            "inconsistent_nodes": inconsistent,
+            "mode": "AVL" if tree.__class__.__name__ == "AVL" else "Stress",
+        }
+    )
+
+
+@main_routes.route("/tree/traverse", methods=["GET"])
+def traverse_tree():
+    """Traverse the tree using BFS, DFS, or INORDER order and return node IDs."""
+    order_type = request.args.get("type", "BFS").upper()
+    tree = flight_service._tree
+
+    if order_type == "BFS":
+        result = tree.breadthFirstSearch()
+    elif order_type == "DFS":
+        nodes = tree.preOrderTraversal() or []
+        result = [node.getValue() for node in nodes]
+    elif order_type == "INORDER":
+        nodes = tree.inOrderTraversal() or []
+        result = [node.getValue() for node in nodes]
+    else:
+        return jsonify({"error": "Invalid traversal type"}), 400
+
+    return jsonify({"order": order_type, "nodes": result})
+
+
+@main_routes.route("/queue/process", methods=["POST"])
+def process_queue():
+    """Process a list of flights provided in the request body."""
+    data = request.get_json() or {}
+    flights_data = data.get("flights")
+
+    if not isinstance(flights_data, list):
+        return jsonify({"error": "A list of flights is required"}), 400
+
+    flights = [_build_flight_from_payload(item) for item in flights_data]
+    reports = flight_service.multi_inserts(flights)
+    return jsonify({"message": "Queue processed", "reports": reports}), 200
 
 
 @main_routes.route("/metrics", methods=["GET"])
 def get_metrics():
-    """
-    Endpoint to get real-time metrics of the flight tree.
+    """Return real-time metrics for the current flight tree."""
+    metrics_data = metrics_service.getRealTimeMetrics()
 
-    Flow:
-    1. Calls the getRealTimeMetrics() method of Metrics_Service to retrieve
-       a dictionary containing the current metrics.
-    2. Returns these metrics as JSON.
-
-    Returned Metrics:
-    {
-        "leaves": int,                   # Number of leaf nodes
-        "height": int,                   # Height of the tree
-        "rotations": dict,               # Number of AVL rotations
-        "massive_cancelations": int      # Total flights canceled massively
-    }
-
-    HTTP Status Codes:
-    - 200 OK if metrics are successfully retrieved
-
-    """
-    metrics_data = Metrics_Service.getRealTimeMetrics()
-
-    # Devolver JSON
+    # Return the collected metrics as JSON.
     return jsonify(metrics_data)
 
 
 @main_routes.route("/config/max-depth", methods=["PUT"])
 def set_max_depth():
+    """Update the maximum depth threshold used for depth penalty pricing."""
     data = request.get_json()
     flight_service.setMaxDepth(data["maxDepth"])
     return jsonify(
@@ -236,8 +390,8 @@ def set_max_depth():
 
 @main_routes.route("/flights/lowest-profitability", methods=["DELETE"])
 def delete_lowest_profitability():
+    """Delete the flight with the lowest profitability and return the deleted flight ID."""
     try:
-        # Call the service method and get the ID of the deleted flight
         flight_id = flight_service.deleteLowestProfitability()
         return (
             jsonify({"message": "Flight deleted successfully", "flight_id": flight_id}),

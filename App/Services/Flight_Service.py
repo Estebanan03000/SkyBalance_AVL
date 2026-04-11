@@ -101,7 +101,7 @@ class Flight_Service:
         if flight is None:
             raise Exception("Flight not found")
 
-        # 🔹 Guardar valores anteriores SOLO de los campos que se van a modificar
+        # Save only the fields that are being modified for undo history.
         old_values = {}
 
         if "origin" in kwargs:
@@ -240,70 +240,56 @@ class Flight_Service:
                 "destiny": flight.getDestiny(),
             }
         
-    def Auditory_System(self, mode): 
-        if mode == "Stress": return self.get_all_flights() 
+    def Auditory_System(self, mode):
+        """Return a list of nodes when stress mode metrics are requested."""
+        if mode == "Stress":
+            return self.get_all_flights()
         return []
-    
+
     def Auditory_report(self, nodes):
-        """
-        Genera un reporte detallado de cada nodo del árbol (AVL o BST en modo Stress),
-        indicando altura real, factor de balance y estado de consistencia AVL.
-        """
+        """Generate a diagnostics report for each node in the current tree."""
         report = []
 
         for node in nodes:
-            # Altura real calculada recursivamente
+            # Compute the actual height of this node in the current tree.
             realHeight = self._tree.getHeightNode(node)
 
-            # Factor de balance calculado sobre la marcha
+            # Calculate the balance factor depending on tree implementation.
             if isinstance(self._tree, AVL):
                 bf = self._tree.getBalanceFactor(node)
             else:
-                # BST: calcular balance como diferencia de alturas de hijos
                 leftHeight = self._tree.getHeightNode(node.getLeftChild())
                 rightHeight = self._tree.getHeightNode(node.getRightChild())
                 bf = leftHeight - rightHeight
 
-            # Determinar estado AVL
-            status = "OK" if abs(bf) <= 1 else "Inconsistente (balance fuera de rango)"
+            status = "OK" if abs(bf) <= 1 else "Inconsistent (out of balance range)"
 
-            # Agregar información al reporte
             report.append({
-                "Node": node.getValue(),      # ID del vuelo o nodo
+                "Node": node.getValue(),
                 "Real Height": realHeight,
                 "Balance Factor": bf,
-                "AVL Status": status
+                "AVL Status": status,
             })
 
         return report
 
 
-    # ==================== EXPORTACIÓN ====================
-    # Método para guardar el árbol completo en archivo JSON
+    # ==================== EXPORT ====================
+    # Method to save the entire tree to a JSON file.
 
     def export_tree_to_json(self, filename):
-        """
-        Exporta el árbol completo a un archivo JSON.
-        Guarda la estructura jerárquica del árbol incluyendo todas las propiedades
-        de cada vuelo, alturas y factores de balance (si es AVL).
+        """Export the current tree structure to a JSON file.
 
-        Parámetros:
-            filename: Nombre o ruta del archivo donde guardar el JSON
-
-        Retorna:
-            bool: True si la exportación fue exitosa, False si hay error
+        The exported file includes the hierarchical tree structure and all flight
+        attributes. The method returns True on success and False on error.
         """
         try:
-            # Serialize the tree to a dictionary
             tree_data = self._tree.serialize_to_dict()
-
-            # Save to JSON file with readable format (indent=2)
             with open(filename, "w", encoding="utf-8") as f:
                 json.dump(tree_data, f, indent=2, ensure_ascii=False)
-
             return True
         except Exception as e:
-            print(f"Error al exportar árbol: {str(e)}")
+            print(f"Error exporting tree: {str(e)}")
             return False
 
     def applyDepthPenalty(self):
