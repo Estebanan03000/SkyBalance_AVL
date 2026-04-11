@@ -1,0 +1,21 @@
+{
+  "type": "INSERTION",
+  "ordering": "code",
+  "flights": [
+    {"code":"SB400","origin":"Medellin","destiny":"Cartagena","departureTime":"10:00","basePrice":400,"passengers":120,"priority":2,"promotion":false,"alert":false},
+    {"code":"SB250","origin":"Bogota","destiny":"Cali","departureTime":"08:00","basePrice":350,"passengers":90,"priority":1,"promotion":true,"alert":false},
+    {"code":"SB150","origin":"Bogota","destiny":"Pereira","departureTime":"07:00","basePrice":280,"passengers":70,"priority":3,"promotion":false,"alert":false},
+    {"code":"SB120","origin":"Cucuta","destiny":"Bogota","departureTime":"06:00","basePrice":260,"passengers":65,"priority":2,"promotion":false,"alert":false},
+    {"code":"SB180","origin":"Manizales","destiny":"Bogota","departureTime":"07:30","basePrice":290,"passengers":75,"priority":1,"promotion":false,"alert":false},
+    {"code":"SB300","origin":"Cali","destiny":"SantaMarta","departureTime":"09:00","basePrice":320,"passengers":85,"priority":2,"promotion":false,"alert":false},
+    {"code":"SB270","origin":"Ibague","destiny":"Medellin","departureTime":"08:30","basePrice":310,"passengers":80,"priority":2,"promotion":false,"alert":false},
+    {"code":"SB330","origin":"Pasto","destiny":"Bogota","departureTime":"09:30","basePrice":340,"passengers":88,"priority":1,"promotion":false,"alert":false},
+    {"code":"SB600","origin":"Barranquilla","destiny":"Bogota","departureTime":"12:00","basePrice":420,"passengers":110,"priority":2,"promotion":false,"alert":true},
+    {"code":"SB500","origin":"Cartagena","destiny":"Medellin","departureTime":"11:00","basePrice":390,"passengers":95,"priority":1,"promotion":false,"alert":false},
+    {"code":"SB450","origin":"Bogota","destiny":"SanAndres","departureTime":"10:30","basePrice":500,"passengers":130,"priority":3,"promotion":false,"alert":false},
+    {"code":"SB550","origin":"Neiva","destiny":"Bogota","departureTime":"11:30","basePrice":370,"passengers":92,"priority":2,"promotion":false,"alert":false},
+    {"code":"SB700","origin":"Villavicencio","destiny":"Medellin","departureTime":"13:00","basePrice":460,"passengers":105,"priority":1,"promotion":false,"alert":false},
+    {"code":"SB650","origin":"Armenia","destiny":"Cali","departureTime":"12:30","basePrice":440,"passengers":100,"priority":2,"promotion":false,"alert":false},
+    {"code":"SB750","origin":"Riohacha","destiny":"Bogota","departureTime":"13:30","basePrice":480,"passengers":115,"priority":3,"promotion":false,"alert":false}
+  ]
+}

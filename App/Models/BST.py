@@ -322,22 +322,23 @@ class BST:
             # Create a Flight instance with the JSON fields
             # Maps 'codigo' to id, 'origen' to origin, etc.
             flight = Flight(
-                id=data["codigo"],
-                origin=data["origen"],
-                destiny=data["destino"],
-                departureTime=data["horaSalida"],
-                basePrice=data["precioBase"],
-                finalPrice=data["precioFinal"],
-                passengers=data["pasajeros"],
-                promotion=data["promocion"],
-                alert=data["alerta"],
+                id=data["code"],
+                origin=data["origin"],
+                destiny=data["destination"],
+                departureTime=data["departureTime"],
+                basePrice=data["basePrice"],
+                finalPrice=data["finalPrice"],
+                passengers=data["passengers"],
+                promotion=data["promotion"],
+                alert=data["alert"],
+                priority=data.get("priority", 1),  # Default priority to 1 if not provided
             )
 
-            # Recursively build the left child from the 'izquierdo' field.
-            flight.setLeftChild(build_node(data.get("izquierdo")))
+            # Recursively build the left child from the 'left' field.
+            flight.setLeftChild(build_node(data.get("left")))
 
-            # Recursively build the right child from the 'derecho' field.
-            flight.setRightChild(build_node(data.get("derecho")))
+            # Recursively build the right child from the 'right' field.
+            flight.setRightChild(build_node(data.get("right")))
 
             # If left child exists, assign this node as its parent
             if flight.getLeftChild():
@@ -421,6 +422,7 @@ class BST:
             "passengers": node.getPassengers(),
             "promotion": node.getPromotion(),
             "alert": node.getAlert(),
+            "priority": node.getPriority(),
         }
 
         # If it is an AVL tree, add balancing information
@@ -428,13 +430,13 @@ class BST:
         from AVL import AVL
 
         if isinstance(self, AVL):
-            node_data["altura"] = self.getHeightNode(node)
+            node_data["height"] = self.getHeightNode(node)
             node_data["balanceFactor"] = self.getBalanceFactor(node)
 
         # RECURSIVE calls to children
         # This is what builds the hierarchical structure
-        node_data["izquierdo"] = self.__serialize_node(node.getLeftChild())
-        node_data["derecho"] = self.__serialize_node(node.getRightChild())
+        node_data["left"] = self.__serialize_node(node.getLeftChild())
+        node_data["right"] = self.__serialize_node(node.getRightChild())
 
         return node_data
 

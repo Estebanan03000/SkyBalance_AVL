@@ -83,6 +83,7 @@ def list_flights():
             "basePrice": f.getBasePrice(),
             "finalPrice": f.getFinalPrice(),
             "passengers": f.getPassengers(),
+            "priority": f.getPriority(),
         }
         for f in flights
     ]
@@ -213,9 +214,11 @@ def export_tree():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
 # ===============================
 # POST /flights/insert  - single insert with multi-insert
 # ===============================
+
 
 @main_routes.route("/flights/insert", methods=["POST"])
 def insert_flight():
@@ -240,9 +243,11 @@ def insert_flight():
     reports = flight_service.multi_inserts([flight])
     return jsonify(reports[0]), 200  # Return only the report of the flight
 
+
 # ===============================
 # GET /metrics  - Obtain metrcis
 # ===============================
+
 
 @main_routes.route("/metrics", methods=["GET"])
 def get_metrics():
@@ -252,9 +257,11 @@ def get_metrics():
     # Return the collected metrics as JSON.
     return jsonify(metrics_data)
 
+
 # ===============================
 # PUT /config/max-depth  - Config limit height for the penalitation sistem
 # ===============================
+
 
 @main_routes.route("/config/max-depth", methods=["PUT"])
 def set_max_depth():
@@ -265,9 +272,11 @@ def set_max_depth():
         {"message": "Depth penalty configuration updated and prices recalculated."}
     )
 
+
 # ===============================
 # DELETE /flights/lowest-profitability - Inteligent elimination by economic impact
 # ===============================
+
 
 @main_routes.route("/flights/lowest-profitability", methods=["DELETE"])
 def delete_lowest_profitability():
@@ -285,8 +294,8 @@ def delete_lowest_profitability():
 # ===============================
 # Get /tree/render - Get render of the tree
 # ===============================
-#  
-@main_routes.route('/tree/render', methods=['GET'])
+#
+@main_routes.route("/tree/render", methods=["GET"])
 def render_tree():
     try:
         renderer = TreeRenderer(flight_service._tree)
@@ -294,4 +303,3 @@ def render_tree():
         return jsonify({"image": image}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    

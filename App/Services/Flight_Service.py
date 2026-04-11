@@ -338,7 +338,7 @@ class Flight_Service:
 
         # If the node is critical (depth penalty active), subtract the 25% surcharge
         if flight.getIsCritical():
-            profitability -= flight.getFinalPrice() - flight.getBasePrice()
+            profitability -= (flight.getFinalPrice() - flight.getBasePrice()) * flight.getPassengers()
 
         return profitability
 
