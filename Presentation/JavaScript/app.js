@@ -107,22 +107,26 @@ function renderTraversal(result) {
 /**
  * Render a simple tree representation using node IDs.
  */
-function renderTree(nodes) {
-    if (!nodes || nodes.length === 0) {
-        selectors.treeContainer.innerHTML = "<p>No nodes in the tree.</p>";
-        return;
-    }
+async function loadTreeImage() {
+    try {
+        const response = await fetch("/tree/render");
+        const data = await response.json();
 
-    selectors.treeContainer.innerHTML = `
-        <div class="tree-nodes">
-            ${nodes
-                .map(
-                    (value) => `
-                <div class="tree-node">${value}</div>`
-                )
-                .join("")}
-        </div>
-    `;
+        if (!data.image) {
+            selectors.treeContainer.innerHTML = "<p>No tree available</p>";
+            return;
+        }
+
+        selectors.treeContainer.innerHTML = `
+            <img 
+                src="data:image/png;base64,${data.image}" 
+                class="tree-image"
+            />
+        `;
+    } catch (error) {
+        console.error("Error rendering tree:", error);
+        selectors.treeContainer.innerHTML = "<p>Error loading tree</p>";
+    }
 }
 
 /**
@@ -134,8 +138,7 @@ async function refreshView() {
         renderFlights(flights);
         const metrics = await request("/metrics");
         renderMetrics(metrics);
-        const treeData = await request("/tree/traverse?type=BFS");
-        renderTree(treeData.nodes);
+        await loadTreeImage();
     } catch (error) {
         selectors.flightList.innerHTML = `<p class="error">${error.message}</p>`;
         selectors.treeContainer.innerHTML = `<p class="error">${error.message}</p>`;

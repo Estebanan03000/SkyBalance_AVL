@@ -126,7 +126,7 @@ class Metrics_Service:
             - 'massive_cancelations': Total massive flight cancellations
     """
 
-            """
+    """
         Returns a dictionary with key metrics of the tree for real-time analysis.
 
         Returns
@@ -137,7 +137,7 @@ class Metrics_Service:
             - 'height': Height of the tree
             - 'rotations': Dictionary of rotations
             - 'massive_cancelations': Total massive flight cancellations
-        """
+    """
 
     def getRealTimeMetrics(self):
         """Return a dictionary with the current tree metrics for the frontend."""

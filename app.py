@@ -4,7 +4,7 @@ from App.routes import main_routes
 # Create the Flask application and configure the static asset folder.
 # The static folder is set to the frontend presentation directory so that
 # CSS, JS, and HTML files can be served from the same location.
-app = Flask(__name__, static_folder="App/Presentation", static_url_path="")
+app = Flask(__name__, static_folder="./Presentation", static_url_path="")
 
 # Register the blueprint that contains the application's API routes.
 app.register_blueprint(main_routes)

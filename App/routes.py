@@ -5,6 +5,7 @@ from App.Services.Flight_Service import Flight_Service
 from App.Models.Flight import Flight
 from datetime import datetime
 from App.Services.Metrics_Service import Metrics_Service
+from App.Utils.Tree_Render import TreeRenderer
 
 # Create an instance of the Flight_Service and Metrics_Service.
 # These will stay in memory while the Flask application is running.
@@ -279,4 +280,18 @@ def delete_lowest_profitability():
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+
+# ===============================
+# Get /tree/render - Get render of the tree
+# ===============================
+#  
+@main_routes.route('/tree/render', methods=['GET'])
+def render_tree():
+    try:
+        renderer = TreeRenderer(flight_service._tree)
+        image = renderer.render()
+        return jsonify({"image": image}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     
