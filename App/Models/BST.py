@@ -3,6 +3,8 @@ from App.Models.Queue import Queue
 
 
 class BST:
+    """Basic binary search tree implementation for Flight nodes."""
+
     def __init__(self):
         self._root = None
 
@@ -25,7 +27,9 @@ class BST:
     # Recursive method to insert a node when the tree has a root
     def __insert(self, currentRoot, node):
         if node.getValue() == currentRoot.getValue():
-            print(f"El valor del nodo {node.getValue()} ya existe en el árbol.")
+            print(
+                f"The value of the node {node.getValue()} already exists in the tree."
+            )
         else:
             # Check if the value to insert is greater than the current root
             if node.getValue() > currentRoot.getValue():
@@ -56,15 +60,13 @@ class BST:
     def search(self, value):
         # Validate if a root exists in the tree
         if self._root is None:
-            raise Exception("El árbol no tiene una raíz.")
+            raise Exception("The tree has no root.")
         else:
             return self.__search(self._root, value)
 
     # Recursive function to handle the search
     def __search(self, currentRoot, value):
         # Validate if the searched value equals the current root
-        # print(f"El valor del nodo es: {currentRoot.getValue()}")
-        # print(f"Comparación: {currentRoot.getValue() == value}" )
         if currentRoot.getValue() == value:
             # If so, return the current root
             return currentRoot
@@ -90,7 +92,7 @@ class BST:
     def breadthFirstSearch(self):
         # Check if the tree is empty
         if self._root is None:
-            print("El árbol está vacío.")
+            print("The tree is empty.")
         else:
             # Enqueue the root first
             queue = Queue()
@@ -219,43 +221,37 @@ class BST:
         node.setParent(None)
 
     def __deleteNodeWithOneChild(self, node):
-        # Obtener el único hijo del nodo a eliminar
-        # Si existe hijo izquierdo, asignarlo como el hijo
+        # Identify the single child of the node to delete.
         if node.getLeftChild() is not None:
             child = node.getLeftChild()
         else:
-            # En caso contrario, asignar el hijo derecho
             child = node.getRightChild()
 
-        # Determinar si el hijo debe ser asignado como hijo izquierdo o derecho del padre
-        # Comparar el valor del hijo con el del padre del nodo a eliminar
+        # Determine whether the child should become the left or right child of the parent.
         if child.getValue() < node.getParent().getValue():
-            # Si es menor, asignar como hijo izquierdo del padre
             node.getParent().setLeftChild(child)
         else:
-            # Si es mayor o igual, asignar como hijo derecho del padre
             node.getParent().setRightChild(child)
 
-        # Actualizar la referencia del padre del hijo para que apunte al padre del nodo eliminado
+        # Update the parent reference of the promoted child.
         child.setParent(node.getParent())
 
-        # Limpiar todas las referencias del nodo a eliminar para liberarlo
+        # Clear the deleted node's references for cleanup.
         node.setParent(None)
         node.setLeftChild(None)
         node.setRightChild(None)
 
     def __deleteNodeWithTwoChildren(self, node):
-        # Encontrar el sucesor inorden del nodo a eliminar
-        # El sucesor es el nodo más a la derecha del subárbol izquierdo
+        # Find the inorder successor of the node to delete.
+        # The successor is the rightmost node in the left subtree.
         successor = node.getLeftChild()
-        # Recorrer hacia la derecha hasta encontrar el nodo más a la derecha
         while successor.getRightChild() is not None:
             successor = successor.getRightChild()
 
-        # Reemplazar el valor del nodo a eliminar con el valor del sucesor
+        # Replace the deleted node's value with the successor's value.
         node.setValue(successor.getValue())
 
-        # Eliminar recursivamente el sucesor (que tendrá a lo máximo un hijo izquierdo)
+        # Recursively delete the successor node.
         self.__deleteNode(successor)
 
     # Method to identify which is the deletion case
@@ -337,10 +333,10 @@ class BST:
                 alert=data["alerta"],
             )
 
-            # Recursively build the left child by calling build_node with 'izquierdo'
+            # Recursively build the left child from the 'izquierdo' field.
             flight.setLeftChild(build_node(data.get("izquierdo")))
 
-            # Recursively build the right child by calling build_node with 'derecho'
+            # Recursively build the right child from the 'derecho' field.
             flight.setRightChild(build_node(data.get("derecho")))
 
             # If left child exists, assign this node as its parent

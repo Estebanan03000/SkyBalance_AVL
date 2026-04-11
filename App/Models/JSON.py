@@ -2,25 +2,30 @@ import json  # To load JSON files
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))  # Add root to path
+# Add the parent folder to the path so model imports work when running this module directly.
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from AVL import AVL  # Import AVL class
 from BST import BST  # Import BST class
 from Flight import Flight  # Import Flight class to create nodes
 
 
 class JSONLoader:
+    """Utility class to load flight data from JSON into tree structures."""
+
     def __init__(self):
-        self.avl = AVL()  # Instance of main AVL tree
-        self.bst = None  # Instance of BST for comparison (only in insertion)
+        self.avl = AVL()  # Main AVL tree instance
+        self.bst = None  # BST instance used only for insertion comparison
 
     def load_from_file(self, file_path):
-        # Open and load JSON file content
+        """Load flight data from a JSON file path.
+
+        The method detects whether the JSON document is an insertion list
+        or a tree topology document.
+        """
         with open(file_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        # Automatically detects the type of JSON:
-        # - If it has "flights", it is of type "insertion"
-        # - If it has "codigo", it is of type "topology"
+        # Automatically detect the JSON document type.
         if "flights" in data:
             self.load_insertion(data["flights"])
         elif "codigo" in data:
@@ -29,32 +34,29 @@ class JSONLoader:
             raise ValueError("Unrecognized JSON type. Must have 'flights' or 'codigo'.")
 
     def load_insertion(self, flights):
-        # Create a BST to compare with the AVL
+        """Load a list of flight records and insert them into AVL and BST instances."""
         self.bst = BST()
-        # Iterate over each flight in the list
+
         for v in flights:
-            # Create a Flight instance mapping JSON fields
             flight = Flight(
-                id=v["codigo"],  # Flight ID
-                origin=v["origen"],  # Origin
-                destiny=v["destino"],  # Destination
-                departureTime=v["horaSalida"],  # Departure time
-                basePrice=v["precioBase"],  # Base price
-                finalPrice=v["precioFinal"],  # Final price
-                passengers=v["pasajeros"],  # Number of passengers
-                promotion=v["promocion"],  # Promotion
-                alert=v["alerta"],  # Alert
+                id=v["codigo"],
+                origin=v["origen"],
+                destiny=v["destino"],
+                departureTime=v["horaSalida"],
+                basePrice=v["precioBase"],
+                finalPrice=v["precioFinal"],
+                passengers=v["pasajeros"],
+                promotion=v["promocion"],
+                alert=v["alerta"],
             )
-            # Insert flight into AVL (automatically balanced)
             self.avl.insert(flight)
-            # Insert flight into BST for comparison
             self.bst.insert(flight)
-        self.avl.applyDepthPenalty()  # Calculate penalization based on depth after all insertions
-        # Print AVL properties
+
+        self.avl.applyDepthPenalty()
+
         print(
             f"AVL - Root: {self.avl.getRoot().getValue() if self.avl.getRoot() else 'None'}, Depth: {self.avl.getDepth()}, Leaves: {self.avl.countLeaves()}"
         )
-        # Print BST properties
         print(
             f"BST - Root: {self.bst.getRoot().getValue() if self.bst.getRoot() else 'None'}, Depth: {self.bst.getDepth()}, Leaves: {self.bst.countLeaves()}"
         )

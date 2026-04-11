@@ -101,7 +101,7 @@ class Flight_Service:
         if flight is None:
             raise Exception("Flight not found")
 
-        # 🔹 Guardar valores anteriores SOLO de los campos que se van a modificar
+        # Save only the fields that are being modified for undo history.
         old_values = {}
 
         if "origin" in kwargs:
@@ -244,7 +244,7 @@ class Flight_Service:
         if mode == "Stress": 
             return self.get_all_flights() 
         return []
-    
+
     def Auditory_report(self, nodes):
         """
         Generate a detailed report of each node of the three (AVL or BST on stress mode), 
@@ -260,7 +260,6 @@ class Flight_Service:
             if isinstance(self._tree, AVL):
                 bf = self._tree.getBalanceFactor(node)
             else:
-                # BST: calcular balance como diferencia de alturas de hijos
                 leftHeight = self._tree.getHeightNode(node.getLeftChild())
                 rightHeight = self._tree.getHeightNode(node.getRightChild())
                 bf = leftHeight - rightHeight
@@ -273,7 +272,7 @@ class Flight_Service:
                 "Node": node.getValue(),      # ID of the flight
                 "Real Height": realHeight,
                 "Balance Factor": bf,
-                "AVL Status": status
+                "AVL Status": status,
             })
 
         return report
@@ -298,16 +297,12 @@ class Flight_Service:
         bool: True if the export was successful, False if there was an error
         """
         try:
-            # Serialize the tree to a dictionary
             tree_data = self._tree.serialize_to_dict()
-
-            # Save to JSON file with readable format (indent=2)
             with open(filename, "w", encoding="utf-8") as f:
                 json.dump(tree_data, f, indent=2, ensure_ascii=False)
-
             return True
         except Exception as e:
-            print(f"Error al exportar árbol: {str(e)}")
+            print(f"Error exporting tree: {str(e)}")
             return False
 
     def applyDepthPenalty(self):

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SkyBalance AVL</title>
+    <link rel="stylesheet" href="../Style/Components.css" />
+</head>
+<body>
+
+    <!-- Main application wrapper -->
+    <div class="container">
+
+        <!-- Sidebar navigation and tree control buttons -->
+        <aside class="sidebar">
+            <h2>SkyBalance</h2>
+            <button id="load-json">Cargar JSON</button>
+            <button id="save-json">Guardar JSON</button>
+            <button id="version-json">Versionar</button>
+            <button id="restore-json">Restaurar</button>
+
+            <hr>
+
+            <button id="mode-stress">Modo Estrés</button>
+            <button id="mode-global">Rebalanceo Global</button>
+            <button id="verify-avl">Verificar AVL</button>
+
+            <hr>
+
+            <button id="insert-node">Insertar Nodo</button>
+            <button id="delete-node">Eliminar Nodo</button>
+            <button id="cancel-subtree">Cancelar Subárbol</button>
+            <button id="undo-action">Deshacer (Undo)</button>
+
+            <hr>
+
+            <button id="process-queue">Procesar Cola</button>
+            <button id="delete-lowest">Eliminar Menor Rentabilidad</button>
+
+            <input id="json-file-input" type="file" accept="application/json" style="display:none" />
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+
+            <!-- Header -->
+            <header class="header">
+                <h1>Gestión de Árbol AVL</h1>
+                <div class="status">
+                    <span class="badge active" id="current-mode">Modo Normal</span>
+                </div>
+            </header>
+
+            <!-- Visualización del Árbol -->
+            <section class="tree-view">
+                <h3>Visualización del Árbol</h3>
+                <div id="tree-container">
+                    <!-- Aquí va tu árbol renderizado con JS -->
+                </div>
+                <div class="flight-list" id="flight-list"></div>
+                <div class="traversal-result" id="traversal-result"></div>
+            </section>
+
+        </main>
+
+        <!-- Panel Derecho -->
+        <aside class="panel">
+
+            <h3>Métricas</h3>
+            <ul>
+                <li>Altura: <span id="altura">0</span></li>
+                <li>Hojas: <span id="hojas">0</span></li>
+                <li>Rotaciones: <span id="rotaciones">0</span></li>
+                <li>Cancelaciones: <span id="cancelaciones">0</span></li>
+            </ul>
+
+            <h3>Recorridos</h3>
+            <div class="recorridos">
+                <button id="traverse-dfs">DFS</button>
+                <button id="traverse-bfs">BFS</button>
+            </div>
+
+            <h3>Cola de Inserciones</h3>
+            <div class="queue" id="queue-status">
+                <p>No hay inserciones pendientes</p>
+            </div>
+
+        </aside>
+
+    </div>
+
+    <script src="../JavaScript/app.js" defer></script>
+</body>
+</html>

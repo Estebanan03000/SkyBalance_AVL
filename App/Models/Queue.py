@@ -1,4 +1,6 @@
 class Queue:
+    """Simple FIFO queue implementation used for sequential flight inserts."""
+
     def __init__(self):
         self._data = []  # _data is the list where the elements are stored
 
