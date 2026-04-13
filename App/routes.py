@@ -84,6 +84,85 @@ def _load_flights_from_json_object(json_data):
     return flight_list
 
 
+def _flatten_topology_nodes(root_payload):
+    """Flatten topology-like JSON into a list of node payloads (preorder)."""
+    nodes = []
+
+    def walk(node):
+        if not isinstance(node, dict):
+            return
+
+        has_id = any(k in node for k in ["id", "code", "codigo"])
+        if has_id:
+            nodes.append(node)
+
+        left = node.get("left") if "left" in node else node.get("izquierdo")
+        right = node.get("right") if "right" in node else node.get("derecho")
+
+        if isinstance(left, dict):
+            walk(left)
+        if isinstance(right, dict):
+            walk(right)
+
+    walk(root_payload)
+    return nodes
+
+
+def _normalize_json_to_flights(json_data):
+    """Normalize any supported JSON format into a list of Flight instances."""
+    raw_nodes = []
+
+    if isinstance(json_data, list):
+        raw_nodes = [item for item in json_data if isinstance(item, dict)]
+    elif isinstance(json_data, dict):
+        if isinstance(json_data.get("flights"), list):
+            raw_nodes = [item for item in (json_data.get("flights") or []) if isinstance(item, dict)]
+        elif isinstance(json_data.get("vuelos"), list):
+            raw_nodes = [item for item in (json_data.get("vuelos") or []) if isinstance(item, dict)]
+        elif any(k in json_data for k in ["id", "code", "codigo"]):
+            raw_nodes = _flatten_topology_nodes(json_data)
+
+    if not raw_nodes:
+        raise ValueError("Unrecognized JSON format for flights")
+
+    normalized_flights = []
+    seen_ids = set()
+
+    for item in raw_nodes:
+        flight_id = _normalize_flight_id(item.get("id") or item.get("code") or item.get("codigo"))
+        if flight_id in seen_ids:
+            continue
+
+        date_value = item.get("date") or item.get("departureTime") or item.get("horaSalida")
+        base_price = item.get("basePrice") or item.get("precioBase") or 0
+        final_price = item.get("finalPrice") or item.get("precioFinal") or base_price
+
+        flight = Flight(
+            id=flight_id,
+            origin=item.get("origin") or item.get("origen"),
+            destiny=item.get("destiny") or item.get("destino"),
+            departureTime=date_value,
+            basePrice=base_price,
+            finalPrice=final_price,
+            passengers=item.get("passengers") or item.get("pasajeros") or 0,
+            promotion=(
+                item.get("promotion")
+                if item.get("promotion") is not None
+                else item.get("promocion", item.get("discount", 0))
+            ),
+            alert=(
+                item.get("alert")
+                if item.get("alert") is not None
+                else item.get("alerta", item.get("sold", False))
+            ),
+        )
+
+        normalized_flights.append(flight)
+        seen_ids.add(flight_id)
+
+    return normalized_flights
+
+
 @main_routes.route("/flights/load", methods=["POST"])
 def load_flights():
     try:
@@ -99,78 +178,26 @@ def load_flights():
         fs._tree = AVL()
         from App.Models.Stack import Stack
         fs._history = Stack()
-        fs._history = Stack()
         fs._max_depth = None
+        fs._mode = "Normal"
         current_module.metrics_service = Metrics_Service(fs)
 
-        # --- INSERTION MODE ---
-        if "flights" in data or "vuelos" in data:
-            from App.Models.BST import BST
-            bst = BST()
-            for v in (data.get("flights") or data.get("vuelos")):
-                flight_payload = {
-                    "id": _normalize_flight_id(v.get("id") or v.get("code") or v.get("codigo")),
-                    "origin": v.get("origin") or v.get("origen"),
-                    "destiny": v.get("destiny") or v.get("destino"),
-                    "departureTime": v.get("departureTime") or v.get("horaSalida"),
-                    "basePrice": v.get("basePrice") or v.get("precioBase"),
-                    # Final price starts equal to base price on initial load
-                    "finalPrice": v.get("basePrice") or v.get("precioBase"),
-                    "passengers": v.get("passengers") or v.get("pasajeros"),
-                    # Use explicit None check for booleans to avoid False being skipped by "or"
-                    "promotion": (
-                        v.get("promotion")
-                        if v.get("promotion") is not None
-                        else v.get("promocion", False)
-                    ),
-                    "alert": (
-                        v.get("alert")
-                        if v.get("alert") is not None
-                        else v.get("alerta", False)
-                    ),
-                }
+        flights = _normalize_json_to_flights(data)
+        for flight in flights:
+            fs._tree.insert(flight)
 
-                # Build independent nodes to avoid parent/child pointer collisions
-                # between AVL and BST trees.
-                flight_avl = Flight(**flight_payload)
-                flight_bst = Flight(**flight_payload)
-                fs._tree.insert(flight_avl)
-                bst.insert(flight_bst)
+        fs.applyDepthPenalty()
+        root = fs._tree.getRoot()
 
-            fs.applyDepthPenalty()
-            avl_root = fs._tree.getRoot()
-            bst_root = bst.getRoot()
-
-            return jsonify({
-                "mode": "insertion",
-                "avl": {
-                    "root": avl_root.getValue() if avl_root else None,
-                    "depth": fs._tree.getDepth(),
-                    "leaves": fs._tree.countLeaves(),
-                },
-                "bst": {
-                    "root": bst_root.getValue() if bst_root else None,
-                    "depth": bst.getDepth(),
-                    "leaves": bst.countLeaves(),
-                },
-            }), 200
-
-        # --- TOPOLOGY MODE ---
-        elif "code" in data or "codigo" in data or "id" in data:
-            fs._tree.buildFromTopology(data)
-            fs.applyDepthPenalty()
-            root = fs._tree._root
-            return jsonify({
-                "mode": "topology",
-                "avl": {
-                    "root": root.getValue() if root else None,
-                    "depth": fs._tree.getDepth(),
-                    "leaves": fs._tree.countLeaves()
-                }
-            }), 200
-
-        else:
-            return jsonify({"error": "Unrecognized JSON format"}), 400
+        return jsonify({
+            "mode": "normalized",
+            "loaded_count": len(flights),
+            "avl": {
+                "root": root.getValue() if root else None,
+                "depth": fs._tree.getDepth(),
+                "leaves": fs._tree.countLeaves(),
+            },
+        }), 200
 
     except Exception as e:
         import traceback
@@ -453,9 +480,26 @@ def delete_lowest_profitability():
 @main_routes.route("/tree/render", methods=["GET"])
 def render_tree():
     try:
-        renderer = TreeRenderer(flight_service._tree)
+        view_mode = request.args.get("view", "ACTIVE")
+        tree_for_view = flight_service.get_visualization_tree(view_mode)
+        renderer = TreeRenderer(tree_for_view)
         image = renderer.render()
-        return jsonify({"image": image}), 200
+        return jsonify({"image": image, "view": view_mode}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@main_routes.route("/tree/state", methods=["GET"])
+def tree_state():
+    """Return the current tree as serialized JSON for frontend fallback rendering."""
+    try:
+        view_mode = request.args.get("view", "ACTIVE")
+        tree = flight_service.get_visualization_tree(view_mode)
+        return jsonify({
+            "mode": flight_service._mode,
+            "view": view_mode,
+            "tree": tree.serialize_to_dict() if tree else None,
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

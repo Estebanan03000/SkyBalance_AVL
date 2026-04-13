@@ -66,15 +66,15 @@ def change_mode():
     """
     try:
         data = request.get_json()
-        mode = data.get("mode", "Global Balance")
+        mode = data.get("mode", "Normal")
         
-        if mode not in ["Stress", "Global Balance"]:
-            return jsonify({"error": "Mode must be 'Stress' or 'Global Balance'"}), 400
+        if mode not in ["Stress", "Normal", "Global Balance"]:
+            return jsonify({"error": "Mode must be 'Stress', 'Normal' or 'Global Balance'"}), 400
         
         flight_service = _get_flight_service()
         
-        if mode == "Global Balance" and flight_service._mode == "Stress":
-            # Switching from Stress to Global Balance - perform global rebalance
+        if mode == "Global Balance":
+            # Explicit global rebalance into AVL
             rebalance_report = flight_service.global_rebalance()
             return jsonify({
                 "message": "✅ Rebalanceo global completado",
@@ -82,7 +82,7 @@ def change_mode():
                 "rebalance_report": rebalance_report
             }), 200
         else:
-            # Simple mode switch to Stress
+            # Simple mode switch to Stress or Normal preserving current layout
             flight_service.set_mode(mode)
             return jsonify({
                 "message": f"✅ Árbol cambiado a modo {mode}",

@@ -1,18 +1,20 @@
 const apiBase = "";
 
-// Track the current mode for JSON operations
-let currentJsonMode = null;
+// Single JSON load flow (format auto-detected by backend)
+let currentTreeMode = "Normal";
+let currentTreeView = "ACTIVE";
 
 // Cache references to all important DOM elements used by the application.
 const selectors = {
-    loadJsonInsertion: document.getElementById("load-json-insertion"),
-    loadJsonTopology: document.getElementById("load-json-topology"),
+    loadJson: document.getElementById("load-json"),
     saveJsonInsertion: document.getElementById("save-json-insertion"),
     saveJsonTopology: document.getElementById("save-json-topology"),
     versionJson: document.getElementById("version-json"),
     restoreJson: document.getElementById("restore-json"),
+    modeNormal: document.getElementById("mode-normal"),
     modeStress: document.getElementById("mode-stress"),
     modeGlobal: document.getElementById("mode-global"),
+    toggleTreeView: document.getElementById("toggle-tree-view"),
     verifyAvl: document.getElementById("verify-avl"),
     insertNode: document.getElementById("insert-node"),
     deleteNode: document.getElementById("delete-node"),
@@ -111,6 +113,7 @@ function renderFlights(flights) {
  * Update the metric values displayed in the metrics panel.
  */
 function renderMetrics(metrics) {
+    currentTreeMode = metrics.mode || currentTreeMode;
     selectors.altura.textContent = metrics.height;
     selectors.hojas.textContent = metrics.leaves;
     if (metrics.mode === "Stress") {
@@ -119,6 +122,25 @@ function renderMetrics(metrics) {
         selectors.rotaciones.textContent = JSON.stringify(metrics.rotations || {});
     }
     selectors.cancelaciones.textContent = metrics.massive_cancelations;
+    updateTreeViewButton();
+}
+
+function getAlternateViewForMode() {
+    return currentTreeMode === "Stress" ? "AVL" : "BST";
+}
+
+function updateTreeViewButton() {
+    if (!selectors.toggleTreeView) {
+        return;
+    }
+
+    if (currentTreeView === "ACTIVE") {
+        selectors.toggleTreeView.textContent = currentTreeMode === "Stress"
+            ? "Ver AVL Equivalente"
+            : "Ver BST Equivalente";
+    } else {
+        selectors.toggleTreeView.textContent = "Ver Árbol Activo";
+    }
 }
 
 /**
@@ -134,17 +156,59 @@ function renderTraversal(result) {
     `;
 }
 
+function renderTreeFallbackNode(node) {
+    if (!node) {
+        return "";
+    }
+
+    const balance = Number.isFinite(node.balanceFactor)
+        ? `<span class="tree-fallback-meta">BF ${node.balanceFactor}</span>`
+        : "";
+
+    return `
+        <li>
+            <div class="tree-fallback-node">
+                <span class="tree-fallback-id">${node.id}</span>
+                ${balance}
+            </div>
+            ${(node.left || node.right)
+                ? `<ul>
+                    ${node.left ? renderTreeFallbackNode(node.left) : ""}
+                    ${node.right ? renderTreeFallbackNode(node.right) : ""}
+                   </ul>`
+                : ""}
+        </li>
+    `;
+}
+
+function renderTreeFallback(treeState) {
+    if (!treeState) {
+        selectors.treeContainer.innerHTML = "<p>No tree available</p>";
+        return;
+    }
+
+    selectors.treeContainer.innerHTML = `
+        <div class="tree-fallback">
+            <div class="tree-fallback-title">Visualización alternativa</div>
+            <ul class="tree-fallback-root">
+                ${renderTreeFallbackNode(treeState)}
+            </ul>
+        </div>
+    `;
+}
+
 /**
  * Render a simple tree representation using node IDs.
  */
 async function loadTreeImage() {
     try {
-        const response = await fetch("/tree/render");
+        const response = await fetch(`/tree/render?view=${currentTreeView}&t=${Date.now()}`);
         const data = await response.json();
 
         if (!data.image) {
-            selectors.treeContainer.innerHTML = "<p>No tree available</p>";
-            return;
+            const fallback = await request(`/tree/state?view=${currentTreeView}`);
+            renderTreeFallback(fallback.tree);
+            return false;
         }
 
         selectors.treeContainer.innerHTML = `
@@ -153,9 +217,17 @@ async function loadTreeImage() {
                 class="tree-image"
             />
         `;
+        return true;
     } catch (error) {
         console.error("Error rendering tree:", error);
-        selectors.treeContainer.innerHTML = "<p>Error loading tree</p>";
+        try {
+            const fallback = await request(`/tree/state?view=${currentTreeView}`);
+            renderTreeFallback(fallback.tree);
+        } catch (fallbackError) {
+            console.error("Error rendering tree fallback:", fallbackError);
+            selectors.treeContainer.innerHTML = "<p>Error loading tree</p>";
+        }
+        return false;
     }
 }
 
@@ -176,20 +248,9 @@ async function refreshView() {
 }
 
 /**
- * Load JSON file in Insertion mode.
- * Opens file picker to select a JSON file with "vuelos" array.
+ * Open file picker and load JSON (backend auto-detects format).
  */
-function loadJsonInsertion() {
-    currentJsonMode = "insertion";
-    selectors.jsonInput.click();
-}
-
-/**
- * Load JSON file in Topology mode.
- * Opens file picker to select a JSON file with tree structure.
- */
-function loadJsonTopology() {
-    currentJsonMode = "topology";
+function loadJson() {
     selectors.jsonInput.click();
 }
 
@@ -322,41 +383,20 @@ selectors.jsonInput.addEventListener("change", async (event) => {
         // Parse the text into a JavaScript object
         const jsonData = JSON.parse(text);
 
-        // INSERTION MODE
-        if (currentJsonMode === "insertion") {
-            const response = await fetch("/flights/load", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(jsonData),
-            });
+        const response = await fetch("/flights/load", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(jsonData),
+        });
 
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "Error loading JSON");
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Error loading JSON");
 
-            // Show AVL vs BST comparison for insertion mode
-            alert(
-                `✅ Árbol cargado en MODO INSERCIÓN\n\n` +
-                `📊 AVL → Raíz: ${data.avl.root} | Profundidad: ${data.avl.depth} | Hojas: ${data.avl.leaves}\n` +
-                `🌳 BST → Raíz: ${data.bst.root} | Profundidad: ${data.bst.depth} | Hojas: ${data.bst.leaves}`
-            );
-        } 
-        // TOPOLOGY MODE
-        else if (currentJsonMode === "topology") {
-            const response = await fetch("/flights/load", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(jsonData),
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "Error loading JSON");
-
-            // Show topology mode confirmation
-            alert(
-                `✅ Árbol cargado en MODO TOPOLOGÍA\n\n` +
-                `📊 Raíz: ${data.avl.root} | Profundidad: ${data.avl.depth} | Hojas: ${data.avl.leaves}`
-            );
-        }
+        alert(
+            `✅ JSON normalizado y cargado en AVL\n\n` +
+            `📦 Nodos cargados: ${data.loaded_count}\n` +
+            `🌳 Raíz: ${data.avl.root} | Profundidad: ${data.avl.depth} | Hojas: ${data.avl.leaves}`
+        );
 
         // Refresh the tree visualization and metrics on screen
         refreshView();
@@ -366,7 +406,6 @@ selectors.jsonInput.addEventListener("change", async (event) => {
     } finally {
         // Reset the file input so the same file can be loaded again if needed
         selectors.jsonInput.value = "";
-        currentJsonMode = null;
     }
 });
 
@@ -576,15 +615,16 @@ async function traverse(type) {
  */
 function attachEvents() {
     // New specific mode buttons
-    selectors.loadJsonInsertion.addEventListener("click", loadJsonInsertion);
-    selectors.loadJsonTopology.addEventListener("click", loadJsonTopology);
+    selectors.loadJson.addEventListener("click", loadJson);
     selectors.saveJsonInsertion.addEventListener("click", saveJsonInsertion);
     selectors.saveJsonTopology.addEventListener("click", saveJsonTopology);
     
     selectors.versionJson.addEventListener("click", versionJson);
     selectors.restoreJson.addEventListener("click", restoreJson);
+    selectors.modeNormal.addEventListener("click", () => switchMode("Normal"));
     selectors.modeStress.addEventListener("click", () => switchMode("Stress"));
     selectors.modeGlobal.addEventListener("click", () => switchMode("Global Balance"));
+    selectors.toggleTreeView.addEventListener("click", toggleTreeViewMode);
     selectors.verifyAvl.addEventListener("click", verifyAvl);
     selectors.insertNode.addEventListener("click", insertNode);
     selectors.deleteNode.addEventListener("click", deleteNode);
@@ -707,12 +747,29 @@ async function switchMode(mode) {
             body: JSON.stringify({ mode }),
         });
         
-        const modeDisplay = mode === "Stress" ? "🚨 ESTRÉS (BST)" : "⚖️ BALANCE GLOBAL (AVL)";
+        currentTreeView = "ACTIVE";
+        const modeDisplayMap = {
+            "Normal": "🌿 NORMAL (AVL)",
+            "Stress": "🚨 ESTRÉS (BST)",
+            "Global Balance": "⚖️ BALANCE GLOBAL (AVL)",
+        };
+        const modeDisplay = modeDisplayMap[mode] || mode;
         selectors.currentMode.textContent = modeDisplay;
+        updateTreeViewButton();
         alert(`${payload.message || "Modo cambiado"}\n\n${modeDisplay}`);
         refreshView();
     } catch (error) {
         alert(`❌ Error al cambiar modo: ${error.message}`);
+    }
+}
+
+async function toggleTreeViewMode() {
+    try {
+        currentTreeView = currentTreeView === "ACTIVE" ? getAlternateViewForMode() : "ACTIVE";
+        updateTreeViewButton();
+        await loadTreeImage();
+    } catch (error) {
+        alert(`❌ Error al cambiar visualización: ${error.message}`);
     }
 }
 /**

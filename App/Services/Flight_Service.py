@@ -23,7 +23,7 @@ class Flight_Service:
     - Remove flights from the AVL tree
     """
 
-    def __init__(self, mode="Global Balance"):
+    def __init__(self, mode="Normal"):
         """
         Initializes the Flight_Service with an empty AVL tree and an empty Stack to undo operations
         """
@@ -36,6 +36,19 @@ class Flight_Service:
             self._tree = BST()
         else:
             self._tree = AVL()
+
+    def _clone_flight(self, node):
+        return Flight(
+            id=node.getValue(),
+            origin=node.getOrigin(),
+            destiny=node.getDestiny(),
+            departureTime=node.getDepartureTime(),
+            basePrice=node.getBasePrice(),
+            finalPrice=node.getFinalPrice(),
+            passengers=node.getPassengers(),
+            promotion=node.getPromotion(),
+            alert=node.getAlert(),
+        )
 
     def _clone_tree_structure(self, source_tree):
         """
@@ -53,17 +66,7 @@ class Flight_Service:
                 return None
             
             # Create new Flight with same data
-            cloned_flight = Flight(
-                id=node.getValue(),
-                origin=node.getOrigin(),
-                destiny=node.getDestiny(),
-                departureTime=node.getDepartureTime(),
-                basePrice=node.getBasePrice(),
-                finalPrice=node.getFinalPrice(),
-                passengers=node.getPassengers(),
-                promotion=node.getPromotion(),
-                alert=node.getAlert()
-            )
+            cloned_flight = self._clone_flight(node)
             
             # Recursively clone children
             left_child = clone_node(node.getLeftChild())
@@ -101,7 +104,7 @@ class Flight_Service:
             self._tree = BST()
             self._tree._root = root_clone
         else:
-            # Switch to AVL (Global Balance mode) - keeping exact structure
+            # Switch to AVL (Normal or Global Balance mode) - keeping exact structure
             self._tree = AVL()
             self._tree._root = root_clone
             
@@ -113,6 +116,29 @@ class Flight_Service:
         self._mode = mode
         # Clear history when switching modes to avoid confusion
         self._history = Stack()
+
+    def get_visualization_tree(self, view_mode=None):
+        """Return a tree instance for visualization without mutating the active tree."""
+        normalized_view = (view_mode or "ACTIVE").upper()
+
+        if normalized_view == "ACTIVE":
+            return self._tree
+
+        if normalized_view == "AVL":
+            tree = AVL()
+            source_nodes = self.get_all_flights() or []
+            for node in source_nodes:
+                tree.insert(self._clone_flight(node))
+            return tree
+
+        if normalized_view == "BST":
+            tree = BST()
+            source_nodes = self.get_all_flights() or []
+            for node in source_nodes:
+                tree.insert(self._clone_flight(node))
+            return tree
+
+        raise ValueError(f"Unsupported visualization mode: {view_mode}")
 
     def global_rebalance(self):
         """
