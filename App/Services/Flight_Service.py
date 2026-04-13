@@ -38,14 +38,156 @@ class Flight_Service:
             self._tree = AVL()
 
     def set_mode(self, mode):
+        """
+        Change the tree mode between Stress (BST) and Global Balance (AVL).
+        Preserves all flight data when switching.
+        """
+        if self._mode == mode:
+            # Already in the desired mode
+            return
+        
+        # Get all flights from the current tree (independent of mode)
+        current_flights = self.get_all_flights() or []
+        
         if mode == "Stress":
+            # Switch to BST (Stress mode)
             self._tree = BST()
+            for flight in current_flights:
+                # Create a new Flight instance to avoid pointer corruption
+                new_flight = Flight(
+                    id=flight.getValue(),
+                    origin=flight.getOrigin(),
+                    destiny=flight.getDestiny(),
+                    departureTime=flight.getDepartureTime(),
+                    basePrice=flight.getBasePrice(),
+                    finalPrice=flight.getFinalPrice(),
+                    passengers=flight.getPassengers(),
+                    promotion=flight.getPromotion(),
+                    alert=flight.getAlert()
+                )
+                self._tree.insert(new_flight)
         else:
-            # Get all flights in the current tree before changing
-            old_flights = self.get_all_flights() or []
+            # Switch to AVL (Global Balance mode)
             self._tree = AVL()
-            for flight in old_flights:
-                self._tree.insert(flight)
+            for flight in current_flights:
+                # Create a new Flight instance to avoid pointer corruption
+                new_flight = Flight(
+                    id=flight.getValue(),
+                    origin=flight.getOrigin(),
+                    destiny=flight.getDestiny(),
+                    departureTime=flight.getDepartureTime(),
+                    basePrice=flight.getBasePrice(),
+                    finalPrice=flight.getFinalPrice(),
+                    passengers=flight.getPassengers(),
+                    promotion=flight.getPromotion(),
+                    alert=flight.getAlert()
+                )
+                self._tree.insert(new_flight)
+            
+            # Apply depth penalty if set
+            if self._max_depth:
+                self.applyDepthPenalty()
+        
+        # Update the mode
+        self._mode = mode
+        # Clear history when switching modes to avoid confusion
+        self._history = Stack()
+
+    def global_rebalance(self):
+        """
+        Performs a global rebalance of the tree.
+        Converts from BST to AVL and rebalances all nodes.
+        Each node is checked for balance, and the tree is restructured as needed.
+        
+        Returns:
+            dict: Report with initial and final tree statistics
+        """
+        # Get current tree info before rebalance
+        initial_flights = self.get_all_flights() or []
+        initial_depth = self._tree.getDepth()
+        
+        # Convert current tree to AVL (which auto-rebalances on insert)
+        self._tree = AVL()
+        
+        # Re-insert all flights - AVL will rebalance automatically
+        for flight in initial_flights:
+            # Create new Flight instance to avoid pointer issues
+            new_flight = Flight(
+                id=flight.getValue(),
+                origin=flight.getOrigin(),
+                destiny=flight.getDestiny(),
+                departureTime=flight.getDepartureTime(),
+                basePrice=flight.getBasePrice(),
+                finalPrice=flight.getFinalPrice(),
+                passengers=flight.getPassengers(),
+                promotion=flight.getPromotion(),
+                alert=flight.getAlert()
+            )
+            self._tree.insert(new_flight)
+        
+        # Re-apply depth penalty if configured
+        if self._max_depth:
+            self.applyDepthPenalty()
+        
+        # Get new tree info after rebalance
+        final_depth = self._tree.getDepth()
+        
+        # Update mode to Global Balance
+        self._mode = "Global Balance"
+        
+        return {
+            "rebalanced": True,
+            "initial_depth": initial_depth,
+            "final_depth": final_depth,
+            "flights_rebalanced": len(initial_flights),
+            "tree_type": "AVL"
+        }
+    
+    def verify_all_balances(self):
+        """
+        Verifies the balance factor of each node in the current tree.
+        Returns a detailed report of nodes that are unbalanced.
+        
+        Returns:
+            dict: Report with balance information for all nodes
+        """
+        all_flights = self.get_all_flights() or []
+        unbalanced_nodes = []
+        balanced_nodes = []
+        
+        for flight in all_flights:
+            node = self._tree.search(flight.getValue())
+            if node is None:
+                continue
+            
+            # Calculate balance factor
+            left_height = self._tree.getHeightNode(node.getLeftChild()) if node.getLeftChild() else 0
+            right_height = self._tree.getHeightNode(node.getRightChild()) if node.getRightChild() else 0
+            balance_factor = left_height - right_height
+            
+            node_info = {
+                "id": node.getValue(),
+                "balance_factor": balance_factor,
+                "left_height": left_height,
+                "right_height": right_height,
+                "depth": self._tree.getNodeDepth(node),
+                "is_balanced": abs(balance_factor) <= 1
+            }
+            
+            if abs(balance_factor) > 1:
+                unbalanced_nodes.append(node_info)
+            else:
+                balanced_nodes.append(node_info)
+        
+        return {
+            "mode": self._mode,
+            "total_nodes": len(all_flights),
+            "balanced_nodes": len(balanced_nodes),
+            "unbalanced_nodes": len(unbalanced_nodes),
+            "unbalanced_details": unbalanced_nodes,
+            "balanced_details": balanced_nodes,
+            "tree_depth": self._tree.getDepth()
+        }
 
     # CREATE
     def create_flight(self, flight: Flight):

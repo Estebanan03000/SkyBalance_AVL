@@ -35,6 +35,9 @@ def change_mode():
     """
     Switch between Stress mode (BST) and Global Balance mode (AVL).
     
+    When switching to Global Balance, performs a global rebalance.
+    When switching to Stress, converts to BST for deformation visualization.
+    
     Expected JSON body:
         {"mode": "Stress"} or {"mode": "Global Balance"}
     """
@@ -46,13 +49,23 @@ def change_mode():
             return jsonify({"error": "Mode must be 'Stress' or 'Global Balance'"}), 400
         
         flight_service = _get_flight_service()
-        flight_service.set_mode(mode)
-        flight_service._mode = mode
         
-        return jsonify({
-            "message": f"✅ Árbol cambiado a modo {mode}",
-            "mode": mode
-        }), 200
+        if mode == "Global Balance" and flight_service._mode == "Stress":
+            # Switching from Stress to Global Balance - perform global rebalance
+            rebalance_report = flight_service.global_rebalance()
+            return jsonify({
+                "message": "✅ Rebalanceo global completado",
+                "mode": "Global Balance",
+                "rebalance_report": rebalance_report
+            }), 200
+        else:
+            # Simple mode switch to Stress
+            flight_service.set_mode(mode)
+            return jsonify({
+                "message": f"✅ Árbol cambiado a modo {mode}",
+                "mode": mode,
+                "tree_type": "BST" if mode == "Stress" else "AVL"
+            }), 200
     except Exception as e:
         return jsonify({"error": f"❌ Error al cambiar modo: {str(e)}"}), 400
 
@@ -109,6 +122,49 @@ def verify_tree():
         }), 200
     except Exception as e:
         return jsonify({"error": f"❌ Error en verificación: {str(e)}"}), 400
+
+
+# ===============================
+# GET /tree/verify-all-balances - Detailed balance verification for all nodes
+# ===============================
+@additional_routes.route("/tree/verify-all-balances", methods=["GET"])
+def verify_all_balances():
+    """
+    Verify the balance factor of every node in the tree.
+    Provides a detailed report of which nodes are balanced and which are not.
+    """
+    try:
+        flight_service = _get_flight_service()
+        report = flight_service.verify_all_balances()
+        
+        return jsonify({
+            "report": report,
+            "status": "unbalanced" if report["unbalanced_nodes"] > 0 else "balanced"
+        }), 200
+    except Exception as e:
+        return jsonify({"error": f"❌ Error al verificar balances: {str(e)}"}), 400
+
+
+# ===============================
+# POST /tree/rebalance - Perform global rebalance
+# ===============================
+@additional_routes.route("/tree/rebalance", methods=["POST"])
+def global_rebalance():
+    """
+    Perform a global rebalance of the tree.
+    Converts the current tree to AVL and rebalances all nodes.
+    This is used to recover from a deformed BST state.
+    """
+    try:
+        flight_service = _get_flight_service()
+        report = flight_service.global_rebalance()
+        
+        return jsonify({
+            "message": "✅ Rebalanceo global completado",
+            "rebalance_report": report
+        }), 200
+    except Exception as e:
+        return jsonify({"error": f"❌ Error en rebalanceo: {str(e)}"}), 400
 
 
 # ===============================

@@ -376,11 +376,25 @@ async function switchMode(mode) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ mode }),
         });
-        selectors.currentMode.textContent = `Mode ${mode}`;
-        alert(payload.message);
+        
+        selectors.currentMode.textContent = `Mode: ${mode}`;
+        
+        // If performing rebalance, show detailed information
+        if (payload.rebalance_report) {
+            const report = payload.rebalance_report;
+            const message = `✅ ${payload.message}\n\n📊 Cambios:
+            • Profundidad anterior: ${report.initial_depth} → ${report.final_depth}
+            • Altura anterior: ${report.initial_height} → ${report.final_height}
+            • Vuelos rebalanceados: ${report.flights_rebalanced}
+            • Tipo de árbol: ${report.tree_type}`;
+            alert(message);
+        } else {
+            alert(payload.message + `\n\nTipo de árbol: ${payload.tree_type || 'Desconocido'}`);
+        }
+        
         refreshView();
     } catch (error) {
-        alert(error.message);
+        alert("❌ Error: " + error.message);
     }
 }
 
@@ -390,9 +404,44 @@ async function switchMode(mode) {
 async function verifyAvl() {
     try {
         const payload = await request("/tree/verify");
-        alert(`Balanced: ${payload.balanced}\nMode: ${payload.mode}\nInconsistent nodes: ${payload.inconsistent_nodes.join(", ")}`);
+        const inconsistentList = payload.inconsistent_nodes.length > 0 
+            ? payload.inconsistent_nodes.map(n => `Vuelo ${n.id} (BF: ${n.balance_factor})`).join(", ")
+            : "Ninguno";
+        const message = `🔍 Estado del árbol:\n
+Modo: ${payload.mode}
+Balanceado: ${payload.balanced ? "✅ Sí" : "❌ No"}
+Nodos inconsistentes: ${inconsistentList}`;
+        alert(message);
     } catch (error) {
-        alert(error.message);
+        alert("❌ Error: " + error.message);
+    }
+}
+
+/**
+ * Verify balance factor of all nodes in the tree.
+ */
+async function verifyAllBalances() {
+    try {
+        const payload = await request("/tree/verify-all-balances");
+        const report = payload.report;
+        
+        let detailedMessage = `📊 Reporte completo de balance:\n
+Modo: ${report.mode}
+Total de nodos: ${report.total_nodes}
+Nodos balanceados: ${report.balanced_nodes}
+Nodos desbalanceados: ${report.unbalanced_nodes}
+Profundidad: ${report.tree_depth}\n`;
+
+        if (report.unbalanced_nodes > 0) {
+            detailedMessage += "⚠️ Nodos desbalanceados:\n";
+            report.unbalanced_details.forEach(node => {
+                detailedMessage += `  • Vuelo ${node.id}: BF=${node.balance_factor}, Profundidad=${node.depth}\n`;
+            });
+        }
+        
+        alert(detailedMessage);
+    } catch (error) {
+        alert("❌ Error: " + error.message);
     }
 }
 
