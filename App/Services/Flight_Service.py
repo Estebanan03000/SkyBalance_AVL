@@ -443,3 +443,20 @@ class Flight_Service:
     def list_versions(self):
         """Returns the names of all saved versions."""
         return list(self._versions.keys())
+    
+    #Method to get the different kinds of tree traversals for the current tree (AVL or BST on stress mode)
+    def get_traversal(self, traversal_type):
+        if traversal_type == "inorder":
+            return [n.getValue() for n in self._tree.inOrderTraversal()]
+
+        elif traversal_type == "preorder":
+            return [n.getValue() for n in self._tree.preOrderTraversal()]
+
+        elif traversal_type == "postorder":
+            return [n.getValue() for n in self._tree.posOrderTraversal()]
+
+        elif traversal_type == "levelorder":
+            return self._tree.breadthFirstSearch()
+        
+        else:
+            raise Exception("Invalid traversal type")
