@@ -205,26 +205,15 @@ async function saveJson() {
  * Save a versioned export of the current tree.
  */
 async function versionJson() {
+    const name = prompt("Version name", "Simulacion Alta Demanda");
+    if (!name) return;
     try {
-        const filename = `tree_version_${Date.now()}.json`;
-
-        const response = await fetch("/tree/export", {
+        const payload = await request("/versions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filename }),
+            body: JSON.stringify({ name }),
         });
-
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-
-        window.URL.revokeObjectURL(url);
+        alert(payload.message);
     } catch (error) {
         alert(error.message);
     }
@@ -232,8 +221,26 @@ async function versionJson() {
 /**
  * Open the hidden file input to upload a JSON file.
  */
-function restoreJson() {
-    selectors.jsonInput.click();
+async function restoreJson() {
+    try {
+        // First get the list of saved versions
+        const versions = await request("/versions");
+        if (versions.length === 0) return alert("No saved versions found");
+
+        const name = prompt(
+            "Available versions:\n" + versions.join("\n") + "\n\nEnter version name to restore:",
+            versions[0]
+        );
+        if (!name) return;
+
+        const payload = await request(`/versions/${encodeURIComponent(name)}/restore`, {
+            method: "PUT",
+        });
+        alert(payload.message);
+        refreshView();
+    } catch (error) {
+        alert(error.message);
+    }
 }
 
 // Triggered when the user selects a file from the file picker

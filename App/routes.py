@@ -6,6 +6,7 @@ from App.Models.Flight import Flight
 from datetime import datetime
 from App.Services.Metrics_Service import Metrics_Service
 from App.Utils.Tree_Render import TreeRenderer
+from App.Models.Stack import Stack
 
 # Create an instance of the Flight_Service and Metrics_Service.
 # These will stay in memory while the Flask application is running.
@@ -60,11 +61,17 @@ def load_flights():
     try:
         data = request.get_json()
 
-        # Reinitialize services at module level so all other endpoints see the new tree
+       
         import App.routes as current_module
-        current_module.flight_service = Flight_Service()
-        current_module.metrics_service = Metrics_Service(current_module.flight_service)
         fs = current_module.flight_service
+        # Reset only the tree and history, keep versions intact
+        from App.Models.AVL import AVL
+        fs._tree = AVL()
+        from App.Models.Stack import Stack
+        fs._history = Stack()
+        fs._history = Stack()
+        fs._max_depth = None
+        current_module.metrics_service = Metrics_Service(fs)
 
         # --- INSERTION MODE ---
         if "flights" in data or "vuelos" in data:
@@ -122,7 +129,7 @@ def load_flights():
             }), 200
 
         # --- TOPOLOGY MODE ---
-        elif "code" in data or "codigo" in data:
+        elif "code" in data or "codigo" in data or "id" in data:
             fs._tree.buildFromTopology(data)
             fs.applyDepthPenalty()
             root = fs._tree._root
@@ -406,3 +413,44 @@ def render_tree():
         return jsonify({"image": image}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# ===============================
+# POST /versions — Save a version
+# ===============================
+@main_routes.route("/versions", methods=["POST"])
+def save_version():
+    """Saves the current tree state with a given name."""
+    import App.routes as current_module
+    data = request.get_json()
+    name = data.get("name")
+    if not name:
+        return jsonify({"error": "Field 'name' is required"}), 400
+    try:
+        current_module.flight_service.save_version(name)
+        return jsonify({"message": f"Version '{name}' saved"}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+# ===============================
+# GET /versions — List versions
+# ===============================
+@main_routes.route("/versions", methods=["GET"])
+def list_versions():
+    """Returns the names of all saved versions."""
+    import App.routes as current_module
+    return jsonify(current_module.flight_service.list_versions())
+
+
+# ===============================
+# PUT /versions/<name>/restore — Restore a version
+# ===============================
+@main_routes.route("/versions/<string:name>/restore", methods=["PUT"])
+def restore_version(name):
+    """Restores the tree to the state of the given version."""
+    import App.routes as current_module
+    try:
+        current_module.flight_service.restore_version(name)
+        return jsonify({"message": f"Version '{name}' restored"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 404
