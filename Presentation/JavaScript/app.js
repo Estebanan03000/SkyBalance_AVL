@@ -20,8 +20,7 @@ const selectors = {
     undoAction: document.getElementById("undo-action"),
     processQueue: document.getElementById("process-queue"),
     deleteLowest: document.getElementById("delete-lowest"),
-    traverseDfs: document.getElementById("traverse-dfs"),
-    traverseBfs: document.getElementById("traverse-bfs"),
+    traversalResult: document.getElementById("traversal-result"),
     jsonInput: document.getElementById("json-file-input"),
     altura: document.getElementById("altura"),
     hojas: document.getElementById("hojas"),
@@ -32,7 +31,25 @@ const selectors = {
     traversalResult: document.getElementById("traversal-result"),
     currentMode: document.getElementById("current-mode"),
     queueStatus: document.getElementById("queue-status"),
+    maxDepthInput: document.getElementById("max-depth-input"),
+    setMaxDepth: document.getElementById("set-max-depth"),
 };
+
+async function setMaxDepth() {
+    const depth = Number(selectors.maxDepthInput.value);
+    if (isNaN(depth) || depth < 0) return alert("Enter a valid depth");
+    try {
+        const payload = await request("/config/max-depth", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ maxDepth: depth }),
+        });
+        alert(payload.message);
+        refreshView();
+    } catch (error) {
+        alert(error.message);
+    }
+}
 
 /**
  * Perform an HTTP request to the backend API and return parsed JSON.
@@ -100,11 +117,41 @@ function renderMetrics(metrics) {
 /**
  * Display the traversal result returned by the API.
  */
+document.getElementById("tree-traverse").addEventListener("click", async () => {
+    try {
+        const response = await fetch("/tree/traversal/type");
+
+        if (!response.ok) {
+            console.error("Error HTTP:", response.status);
+            return;
+        }
+
+        const data = await response.json();
+
+        renderTraversal(data);
+        console.log(selectors.traversalResult);
+
+    } catch (error) {
+        console.error("Error fetching traversal:", error);
+    }
+});
+
 function renderTraversal(result) {
     selectors.traversalResult.innerHTML = `
         <div class="traversal-box">
-        <h4>Traversal ${result.order}</h4>
-        <p>${result.nodes.join(" → ") || "No nodes available"}</p>
+
+            <h4>Inorder</h4>
+            <p>${result.inorder?.join(" → ") || "No data"}</p>
+
+            <h4>Preorder</h4>
+            <p>${result.preorder?.join(" → ") || "No data"}</p>
+
+            <h4>Postorder</h4>
+            <p>${result.postorder?.join(" → ") || "No data"}</p>
+
+            <h4>Level Order (BFS)</h4>
+            <p>${result.levelorder?.join(" → ") || "No data"}</p>
+
         </div>
     `;
 }
@@ -208,6 +255,7 @@ async function saveJsonTopology() {
  * Load the default local JSON file on the server and refresh the view.
  */
 async function loadJson() {
+    selectors.jsonInput.value = "";
     selectors.jsonInput.click();
 }
 
@@ -218,12 +266,24 @@ async function saveJson() {
     try {
         const filename = prompt("Filename to save", "tree_export.json");
         if (!filename) return;
-        const payload = await request("/tree/export", {
+
+        const response = await fetch("/tree/export", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ filename }),
         });
-        alert(payload.message);
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a); // opcional pero más seguro
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
     } catch (error) {
         alert(error.message);
     }
@@ -235,17 +295,28 @@ async function saveJson() {
 async function versionJson() {
     try {
         const filename = `tree_version_${Date.now()}.json`;
-        const payload = await request("/tree/export", {
+
+        const response = await fetch("/tree/export", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ filename }),
         });
-        alert(payload.message);
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
     } catch (error) {
         alert(error.message);
     }
 }
-
 /**
  * Open the hidden file input to upload a JSON file.
  */
@@ -489,6 +560,7 @@ function attachEvents() {
     selectors.deleteLowest.addEventListener("click", deleteLowestProfitability);
     selectors.traverseDfs.addEventListener("click", () => traverse("DFS"));
     selectors.traverseBfs.addEventListener("click", () => traverse("BFS"));
+    selectors.setMaxDepth.addEventListener("click", setMaxDepth);
 }
 
 window.addEventListener("DOMContentLoaded", () => {

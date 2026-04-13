@@ -41,6 +41,12 @@
             <button id="process-queue">Procesar Cola</button>
             <button id="delete-lowest">Eliminar Menor Rentabilidad</button>
 
+            <hr>
+
+            <label style="color:white; font-size:13px;">Profundidad máxima</label>
+            <input id="max-depth-input" type="number" min="0" placeholder="Ej: 2" style="width:100%; margin-bottom:6px;" />
+            <button id="set-max-depth">Aplicar Penalización</button>
+
             <input id="json-file-input" type="file" accept="application/json" style="display:none" />
         </aside>
 
@@ -80,8 +86,8 @@
 
             <h3>Recorridos</h3>
             <div class="recorridos">
-                <button id="traverse-dfs">DFS</button>
-                <button id="traverse-bfs">BFS</button>
+                <button id="tree-traverse">Recorridos del arbol</button>
+                <div id="traversal-result" class="traversal-result"></div>
             </div>
 
             <h3>Cola de Inserciones</h3>

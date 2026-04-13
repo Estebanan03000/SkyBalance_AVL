@@ -22,14 +22,13 @@ class Metrics_Service:
 
     #Method that counts and show the amount of nodes type leaf that exist on the tree
     def LeavesCounter(self):
-        """Return the number of leaf nodes in the current tree."""
-        leaves = 0
         flights = self._Service.get_all_flights()
-
+        if not flights:
+            return 0
+        leaves = 0
         for flight in flights:
             if flight.getLeftChild() is None and flight.getRightChild() is None:
                 leaves += 1
-
         return leaves
     
     #Retrieves the count of rotations that have occurred in the tree.
