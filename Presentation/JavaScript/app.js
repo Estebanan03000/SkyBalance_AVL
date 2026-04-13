@@ -149,17 +149,7 @@ async function refreshView() {
  * Load the default local JSON file on the server and refresh the view.
  */
 async function loadJson() {
-    try {
-        const payload = await request("/tree/load", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ filename: "App/Models/prueba_insercion.json" }),
-        });
-        alert(payload.message);
-        refreshView();
-    } catch (error) {
-        alert(error.message);
-    }
+    selectors.jsonInput.click();
 }
 
 /**
@@ -204,24 +194,49 @@ function restoreJson() {
     selectors.jsonInput.click();
 }
 
+// Triggered when the user selects a file from the file picker
 selectors.jsonInput.addEventListener("change", async (event) => {
+    // Get the selected file from the input
     const file = event.target.files[0];
     if (!file) return;
-    const formData = new FormData();
-    formData.append("file", file);
 
     try {
-        const response = await fetch("/tree/upload", {
+        // Read the file content as plain text
+        const text = await file.text();
+
+        // Parse the text into a JavaScript object
+        const jsonData = JSON.parse(text);
+
+        // Send the parsed JSON to the backend load endpoint
+        const response = await fetch("/flights/load", {
             method: "POST",
-            body: formData,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(jsonData),
         });
+
         const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Error uploading JSON");
-        alert(data.message);
+        if (!response.ok) throw new Error(data.error || "Error loading JSON");
+
+        // Show different messages depending on which mode was detected by the backend
+        if (data.mode === "insertion") {
+            // Insertion mode: show comparison between AVL and BST
+            alert(
+                `Tree loaded in insertion mode\n\n` +
+                `AVL → Root: ${data.avl.root} | Depth: ${data.avl.depth} | Leaves: ${data.avl.leaves}\n` +
+                `BST → Root: ${data.bst.root} | Depth: ${data.bst.depth} | Leaves: ${data.bst.leaves}`
+            );
+        } else {
+            // Topology mode: tree was rebuilt as-is from the JSON structure
+            alert(`Tree loaded in topology mode\nRoot: ${data.avl.root}`);
+        }
+
+        // Refresh the tree visualization and metrics on screen
         refreshView();
+
     } catch (error) {
-        alert(error.message);
+        alert("Error: " + error.message);
     } finally {
+        // Reset the file input so the same file can be loaded again if needed
         selectors.jsonInput.value = "";
     }
 });

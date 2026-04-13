@@ -320,25 +320,22 @@ class BST:
                 return None
 
             # Create a Flight instance with the JSON fields
-            # Maps 'codigo' to id, 'origen' to origin, etc.
             flight = Flight(
-                id=data["code"],
-                origin=data["origin"],
-                destiny=data["destination"],
-                departureTime=data["departureTime"],
-                basePrice=data["basePrice"],
-                finalPrice=data["finalPrice"],
-                passengers=data["passengers"],
-                promotion=data["promotion"],
-                alert=data["alert"],
-                priority=data.get("priority", 1),  # Default priority to 1 if not provided
+                id=data.get("code") or data.get("codigo"),
+                origin=data.get("origin") or data.get("origen"),
+                destiny=data.get("destiny") or data.get("destino"),
+                departureTime=data.get("departureTime") or data.get("horaSalida"),
+                basePrice=data.get("basePrice") or data.get("precioBase"),
+                finalPrice=data.get("finalPrice") or data.get("precioFinal"),
+                passengers=data.get("passengers") or data.get("pasajeros"),
+                promotion=data.get("promotion") if data.get("promotion") is not None else data.get("promocion", False),
+                alert=data.get("alert") if data.get("alert") is not None else data.get("alerta", False),
+                priority=data.get("priority") or data.get("prioridad", 0)
             )
-
-            # Recursively build the left child from the 'left' field.
-            flight.setLeftChild(build_node(data.get("left")))
-
-            # Recursively build the right child from the 'right' field.
-            flight.setRightChild(build_node(data.get("right")))
+            left_key = data.get("left") or data.get("izquierdo")
+            right_key = data.get("right") or data.get("derecho")
+            flight.setLeftChild(build_node(left_key))
+            flight.setRightChild(build_node(right_key))
 
             # If left child exists, assign this node as its parent
             if flight.getLeftChild():
