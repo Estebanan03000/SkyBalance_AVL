@@ -113,7 +113,11 @@ function renderFlights(flights) {
 function renderMetrics(metrics) {
     selectors.altura.textContent = metrics.height;
     selectors.hojas.textContent = metrics.leaves;
-    selectors.rotaciones.textContent = JSON.stringify(metrics.rotations);
+    if (metrics.mode === "Stress") {
+        selectors.rotaciones.textContent = "No aplica en modo Stress (BST)";
+    } else {
+        selectors.rotaciones.textContent = JSON.stringify(metrics.rotations || {});
+    }
     selectors.cancelaciones.textContent = metrics.massive_cancelations;
 }
 
@@ -767,9 +771,10 @@ async function undoAction() {
  */
 async function cancelSubtree() {
     try {
-        const id = prompt("ID del vuelo raíz para cancelar subárbol", "");
-        if (!id || isNaN(Number(id))) {
-            return alert("❌ Debes ingresar un ID válido");
+        const rawId = prompt("ID del vuelo raíz para cancelar subárbol (ej: 800 o SB800)", "");
+        const id = normalizeFlightId(rawId);
+        if (id === null || Number.isNaN(id)) {
+            return alert("❌ Debes ingresar un ID válido (numérico o SB###)");
         }
         
         const confirmed = confirm(`⚠️ ¿Seguro de cancelar el subárbol con raíz ID ${id}?\n\nEsto eliminará este vuelo y todos sus descendientes.`);
@@ -778,7 +783,7 @@ async function cancelSubtree() {
         const payload = await request("/tree/cancel-subtree", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: Number(id) }),
+            body: JSON.stringify({ id }),
         });
         
         const deletedText = payload.deleted_ids ? payload.deleted_ids.join(", ") : "N/A";

@@ -34,12 +34,10 @@ class Metrics_Service:
     #Retrieves the count of rotations that have occurred in the tree.
     #Return Retrieves the count of rotations that have occurred in the tree.
     def RotationCounter(self):
-        """Return the rotation counts from the underlying tree implementation."""
-        rotations = self._Service._tree.getRotationCounts()
-        print("Rotation counts:")
-        for rot_type, count in rotations.items():
-            print(f"{rot_type}: {count}")
-        return rotations
+        """Return rotation counters only when AVL balancing is active."""
+        if self._Service._mode == "Stress":
+            return None
+        return self._Service._tree.getRotationCounts()
     
     def TreeHeight(self):
         """Return the height of the current tree."""
@@ -141,6 +139,7 @@ class Metrics_Service:
     def getRealTimeMetrics(self):
         """Return a dictionary with the current tree metrics for the frontend."""
         return {
+            "mode": self._Service._mode,
             "leaves": self.LeavesCounter(),
             "height": self.TreeHeight(),
             "rotations": self.RotationCounter(),

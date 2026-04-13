@@ -5,6 +5,7 @@ Se importan en app.py con: from App.routes_endpoints import additional_routes
 
 from flask import Blueprint, request, jsonify
 from App.Models.Flight import Flight
+import re
 
 additional_routes = Blueprint("additional", __name__)
 
@@ -25,6 +26,28 @@ def _get_flight_service():
         return live_flight_service
     except Exception:
         return _flight_service
+
+
+def _normalize_flight_id(raw_id):
+    """Normalize IDs to int for tree comparisons (e.g. 800, "800", "SB800")."""
+    if raw_id is None:
+        raise ValueError("Flight ID is required")
+
+    if isinstance(raw_id, (int, float)):
+        return int(raw_id)
+
+    raw_text = str(raw_id).strip()
+    if not raw_text:
+        raise ValueError("Flight ID is required")
+
+    if raw_text.isdigit():
+        return int(raw_text)
+
+    match = re.search(r"(\d+)$", raw_text)
+    if match:
+        return int(match.group(1))
+
+    raise ValueError(f"Invalid flight ID format: {raw_id}")
 
 
 # ===============================
@@ -82,6 +105,15 @@ def verify_tree():
     """
     try:
         flight_service = _get_flight_service()
+        if flight_service._mode == "Stress":
+            report = flight_service.verify_all_balances()
+            return jsonify({
+                "balanced": False,
+                "mode": flight_service._mode,
+                "message": "La verificacion AVL no aplica en modo Stress (BST).",
+                "inconsistent_nodes": report.get("unbalanced_details", []),
+            }), 200
+
         root = flight_service._tree.getRoot()
         
         if root is None:
@@ -100,9 +132,9 @@ def verify_tree():
             
             left = node.getLeftChild()
             right = node.getRightChild()
-            
-            left_height = left.getHeight() if left else 0
-            right_height = right.getHeight() if right else 0
+
+            left_height = flight_service._tree.getHeightNode(left) if left else 0
+            right_height = flight_service._tree.getHeightNode(right) if right else 0
             balance_factor = left_height - right_height
             
             if abs(balance_factor) > 1:
@@ -263,10 +295,9 @@ def cancel_subtree():
     """
     try:
         data = request.get_json()
-        root_id = data.get("id")
-        
-        if not root_id:
-            return jsonify({"error": "ID is required"}), 400
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
+        root_id = _normalize_flight_id(data.get("id"))
         
         # Find the root flight
         flight_service = _get_flight_service()

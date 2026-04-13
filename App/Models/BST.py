@@ -323,6 +323,26 @@ class BST:
                 self.__print_tree(node.getLeftChild(), new_prefix, True)
 
     def buildFromTopology(self, tree_data):
+        def normalize_id(raw_id):
+            if raw_id is None:
+                raise ValueError("Flight ID is required")
+
+            if isinstance(raw_id, (int, float)):
+                return int(raw_id)
+
+            raw_text = str(raw_id).strip()
+            if raw_text.isdigit():
+                return int(raw_text)
+
+            digits = ""
+            for char in raw_text:
+                if char.isdigit():
+                    digits += char
+            if digits:
+                return int(digits)
+
+            raise ValueError(f"Invalid flight ID format: {raw_id}")
+
         # Define an internal recursive function to build each node
         def build_node(data):
             # If the data is None (leaf or empty), return None
@@ -331,7 +351,7 @@ class BST:
 
             # Create a Flight instance with the JSON fields
             flight = Flight(
-                id=str(data.get("code") or data.get("codigo") or data.get("id")),
+                id=normalize_id(data.get("code") or data.get("codigo") or data.get("id")),
                 origin=data.get("origin") or data.get("origen"),
                 destiny=data.get("destiny") or data.get("destino"),
                 departureTime=data.get("departureTime") or data.get("horaSalida"),

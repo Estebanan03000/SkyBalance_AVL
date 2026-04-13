@@ -227,6 +227,34 @@ class Flight_Service:
         self.applyDepthPenalty()  # the new flight could cause depth changes, so we recalculate penalties after each insertion
 
     # READ (single flight)
+    def _normalize_id_value(self, raw_id):
+        if raw_id is None:
+            return None
+        text = str(raw_id).strip()
+        if not text:
+            return None
+        if text.isdigit():
+            return int(text)
+        digits = ""
+        for char in text:
+            if char.isdigit():
+                digits += char
+        return int(digits) if digits else None
+
+    def _safe_search_by_id(self, flight_id):
+        """Search node tolerant to legacy trees with mixed id types (str/int)."""
+        try:
+            return self._tree.search(flight_id)
+        except Exception:
+            pass
+
+        target = self._normalize_id_value(flight_id)
+        flights = self.get_all_flights() or []
+        for node in flights:
+            if self._normalize_id_value(node.getValue()) == target:
+                return node
+        return None
+
     def get_flight(self, flight_id):
         """
         Retrieves a flight from the AVL tree using its unique ID.
@@ -241,7 +269,7 @@ class Flight_Service:
         Flight or None
             The Flight object if found, otherwise None.
         """
-        return self._tree.search(flight_id)
+        return self._safe_search_by_id(flight_id)
 
     # READ (all flights)
     def get_all_flights(self):
@@ -312,7 +340,8 @@ class Flight_Service:
         if flight is None:
             raise Exception("Flight not found")
 
-        self._tree.delete(flight_id)
+        # Delete using the real node value to avoid int/str mismatches.
+        self._tree.delete(flight.getValue())
         self._history.push(("insert", flight))
 
     def undo(self):
