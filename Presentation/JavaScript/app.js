@@ -20,7 +20,10 @@ const selectors = {
     undoAction: document.getElementById("undo-action"),
     processQueue: document.getElementById("process-queue"),
     deleteLowest: document.getElementById("delete-lowest"),
-    traversalResult: document.getElementById("traversal-result"),
+    traverseDepth: document.getElementById("traverse-depth"),
+    traversePreorder: document.getElementById("traverse-preorder"),
+    traverseInorder: document.getElementById("traverse-inorder"),
+    traversePostorder: document.getElementById("traverse-postorder"),
     jsonInput: document.getElementById("json-file-input"),
     altura: document.getElementById("altura"),
     hojas: document.getElementById("hojas"),
@@ -117,41 +120,12 @@ function renderMetrics(metrics) {
 /**
  * Display the traversal result returned by the API.
  */
-document.getElementById("tree-traverse").addEventListener("click", async () => {
-    try {
-        const response = await fetch("/tree/traversal/type");
-
-        if (!response.ok) {
-            console.error("Error HTTP:", response.status);
-            return;
-        }
-
-        const data = await response.json();
-
-        renderTraversal(data);
-        console.log(selectors.traversalResult);
-
-    } catch (error) {
-        console.error("Error fetching traversal:", error);
-    }
-});
-
 function renderTraversal(result) {
+    const nodes = Array.isArray(result.nodes) ? result.nodes : [];
     selectors.traversalResult.innerHTML = `
         <div class="traversal-box">
-
-            <h4>Inorder</h4>
-            <p>${result.inorder?.join(" → ") || "No data"}</p>
-
-            <h4>Preorder</h4>
-            <p>${result.preorder?.join(" → ") || "No data"}</p>
-
-            <h4>Postorder</h4>
-            <p>${result.postorder?.join(" → ") || "No data"}</p>
-
-            <h4>Level Order (BFS)</h4>
-            <p>${result.levelorder?.join(" → ") || "No data"}</p>
-
+            <h4>${result.order || "Recorrido"}</h4>
+            <p>${nodes.join(" → ") || "No data"}</p>
         </div>
     `;
 }
@@ -558,8 +532,10 @@ function attachEvents() {
     selectors.undoAction.addEventListener("click", undoAction);
     selectors.processQueue.addEventListener("click", processQueue);
     selectors.deleteLowest.addEventListener("click", deleteLowestProfitability);
-    selectors.traverseDfs.addEventListener("click", () => traverse("DFS"));
-    selectors.traverseBfs.addEventListener("click", () => traverse("BFS"));
+    selectors.traverseDepth.addEventListener("click", () => traverse("BFS"));
+    selectors.traversePreorder.addEventListener("click", () => traverse("PREORDER"));
+    selectors.traverseInorder.addEventListener("click", () => traverse("INORDER"));
+    selectors.traversePostorder.addEventListener("click", () => traverse("POSTORDER"));
     selectors.setMaxDepth.addEventListener("click", setMaxDepth);
 }
 

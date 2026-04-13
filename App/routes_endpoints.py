@@ -128,11 +128,11 @@ def traverse_tree():
         tree = flight_service._tree
         result_nodes = []
         
-        if traverse_type == "DFS":
+        if traverse_type in ["DFS", "PREORDER"]:
             # DFS: Use preOrder traversal
             flights = tree.preOrderTraversal() or []
             result_nodes = [f.getValue() for f in flights]
-            order = "DFS (Pre-Order)"
+            order = "PreOrder" if traverse_type == "PREORDER" else "DFS (Pre-Order)"
         
         elif traverse_type == "BFS":
             # BFS: Breadth-first search
@@ -153,7 +153,7 @@ def traverse_tree():
             order = "PostOrder"
         
         else:
-            return jsonify({"error": "Unknown traversal type. Use DFS, BFS, INORDER, or POSTORDER"}), 400
+            return jsonify({"error": "Unknown traversal type. Use DFS, PREORDER, BFS, INORDER, or POSTORDER"}), 400
         
         return jsonify({
             "order": order,

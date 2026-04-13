@@ -7,11 +7,7 @@ from App.Models.Flight import Flight
 from datetime import datetime
 from App.Services.Metrics_Service import Metrics_Service
 from App.Utils.Tree_Render import TreeRenderer
-<<<<<<< HEAD
 from App.Utils.JSON_Handler import JSONHandler
-=======
-from App.Models.Flight import Flight as flight_model
->>>>>>> ed614c88221aa161595b554de6581fe0eb702f2f
 
 # Create an instance of the Flight_Service and Metrics_Service.
 # These will stay in memory while the Flask application is running.
@@ -90,6 +86,8 @@ def _load_flights_from_json_object(json_data):
 def load_flights():
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
 
         # Reinitialize services at module level so all other endpoints see the new tree
         import App.routes as current_module
@@ -101,90 +99,52 @@ def load_flights():
         if "flights" in data or "vuelos" in data:
             from App.Models.BST import BST
             bst = BST()
-
             for v in (data.get("flights") or data.get("vuelos")):
-                # Separate objects so parent pointers don't collide between trees
-                flight_avl = Flight(
-                    id=str(v.get("code") or v.get("codigo")),
-                    origin=v.get("origin") or v.get("origen"),
-                    destiny=v.get("destiny") or v.get("destino"),
-                    departureTime=v.get("departureTime") or v.get("horaSalida"),
-                    basePrice=v.get("basePrice") or v.get("precioBase"),
-                    finalPrice=v.get("basePrice") or v.get("precioBase"),
-                    passengers=v.get("passengers") or v.get("pasajeros"),
-                    promotion=v.get("promotion") if v.get("promotion") is not None else v.get("promocion", False),
-                    alert=v.get("alert") if v.get("alert") is not None else v.get("alerta", False),
-                )
-                flight_bst = Flight(
-                    id=str(v.get("code") or v.get("codigo")),
-                    origin=v.get("origin") or v.get("origen"),
-                    destiny=v.get("destiny") or v.get("destino"),
-                    departureTime=v.get("departureTime") or v.get("horaSalida"),
-                    basePrice=v.get("basePrice") or v.get("precioBase"),
-                    finalPrice=v.get("basePrice") or v.get("precioBase"),
-                    passengers=v.get("passengers") or v.get("pasajeros"),
-                    promotion=v.get("promotion") if v.get("promotion") is not None else v.get("promocion", False),
-                    alert=v.get("alert") if v.get("alert") is not None else v.get("alerta", False),
-                )
+                flight_payload = {
+                    "id": _normalize_flight_id(v.get("id") or v.get("code") or v.get("codigo")),
+                    "origin": v.get("origin") or v.get("origen"),
+                    "destiny": v.get("destiny") or v.get("destino"),
+                    "departureTime": v.get("departureTime") or v.get("horaSalida"),
+                    "basePrice": v.get("basePrice") or v.get("precioBase"),
+                    # Final price starts equal to base price on initial load
+                    "finalPrice": v.get("basePrice") or v.get("precioBase"),
+                    "passengers": v.get("passengers") or v.get("pasajeros"),
+                    # Use explicit None check for booleans to avoid False being skipped by "or"
+                    "promotion": (
+                        v.get("promotion")
+                        if v.get("promotion") is not None
+                        else v.get("promocion", False)
+                    ),
+                    "alert": (
+                        v.get("alert")
+                        if v.get("alert") is not None
+                        else v.get("alerta", False)
+                    ),
+                }
+
+                # Build independent nodes to avoid parent/child pointer collisions
+                # between AVL and BST trees.
+                flight_avl = Flight(**flight_payload)
+                flight_bst = Flight(**flight_payload)
                 fs._tree.insert(flight_avl)
                 bst.insert(flight_bst)
 
-<<<<<<< HEAD
-        # Insert each flight into both trees
-        for v in (data.get("flights") or data.get("vuelos")):
-            flight_payload = {
-                "id": _normalize_flight_id(v.get("id") or v.get("code") or v.get("codigo")),
-                "origin": v.get("origin") or v.get("origen"),
-                "destiny": v.get("destiny") or v.get("destino"),
-                "departureTime": v.get("departureTime") or v.get("horaSalida"),
-                "basePrice": v.get("basePrice") or v.get("precioBase"),
-                # Final price starts equal to base price on initial load
-                "finalPrice": v.get("basePrice") or v.get("precioBase"),
-                "passengers": v.get("passengers") or v.get("pasajeros"),
-                # Use explicit None check for booleans to avoid False being skipped by "or"
-                "promotion": (
-                    v.get("promotion")
-                    if v.get("promotion") is not None
-                    else v.get("promocion", False)
-                ),
-                "alert": (
-                    v.get("alert")
-                    if v.get("alert") is not None
-                    else v.get("alerta", False)
-                ),
-            }
-
-            # Build independent nodes to avoid parent/child pointer collisions
-            # between AVL and BST trees.
-            flight_avl = Flight(**flight_payload)
-            flight_bst = Flight(**flight_payload)
-            # AVL self-balances automatically after each insert
-            flight_service._tree.insert(flight_avl)
-            # BST inserts without balancing, used only for comparison
-            bst.insert(flight_bst)
-=======
             fs.applyDepthPenalty()
->>>>>>> ed614c88221aa161595b554de6581fe0eb702f2f
-
-            avl_root = fs._tree._root
-            bst_root = bst._root
-
-            print("Nodes in AVL:", len(fs.get_all_flights()))
-            print("AVL depth:", fs._tree.getDepth())
-            print("BST depth:", bst.getDepth())
+            avl_root = fs._tree.getRoot()
+            bst_root = bst.getRoot()
 
             return jsonify({
                 "mode": "insertion",
                 "avl": {
                     "root": avl_root.getValue() if avl_root else None,
                     "depth": fs._tree.getDepth(),
-                    "leaves": fs._tree.countLeaves()
+                    "leaves": fs._tree.countLeaves(),
                 },
                 "bst": {
                     "root": bst_root.getValue() if bst_root else None,
                     "depth": bst.getDepth(),
-                    "leaves": bst.countLeaves()
-                }
+                    "leaves": bst.countLeaves(),
+                },
             }), 200
 
         # --- TOPOLOGY MODE ---
@@ -270,8 +230,10 @@ def create_flight():
     Returns:
         JSON message confirming the creation with HTTP status 201.
     """
-<<<<<<< HEAD
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
+
     try:
         flight = Flight(
             _normalize_flight_id(data.get("id") or data.get("codigo") or data.get("code")),
@@ -286,29 +248,14 @@ def create_flight():
         )
     except (KeyError, TypeError, ValueError) as error:
         return jsonify({"error": f"Invalid flight payload: {error}"}), 400
-=======
+
     try:
+        # Always use the live module-level instance that all routes share.
         import App.routes as current_module
-        fs = current_module.flight_service
 
-        data = request.get_json()
->>>>>>> ed614c88221aa161595b554de6581fe0eb702f2f
-
-        flight = Flight(
-            str(data["id"]),
-            data["origin"],
-            data["destiny"],
-            data["date"],
-            data["basePrice"],
-            data["finalPrice"],
-            data["passengers"],
-            data.get("discount", 0),
-            data.get("sold", False),
-        )
-
-        fs.create_flight(flight)
+        current_module.flight_service.create_flight(flight)
+        current_module.flight_service.applyDepthPenalty()
         return jsonify({"message": "Flight created"}), 201
-
     except Exception as e:
         import traceback
         return jsonify({
