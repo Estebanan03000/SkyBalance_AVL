@@ -55,6 +55,108 @@ def _load_flights_from_json_object(json_data):
     return flight_list
 
 
+@main_routes.route("/flights/load", methods=["POST"])
+def load_flights():
+    # Read the JSON sent in the request body
+    data = request.get_json()
+
+    # Reset the service instances so the tree starts fresh on every load
+    global flight_service, metrics_service
+    flight_service = Flight_Service()
+    metrics_service = Metrics_Service(flight_service)
+
+    # --- INSERTION MODE ---
+    # Detected when the JSON has a top-level "flights" array
+    if "flights" in data or "vuelos" in data:
+        from App.Models.BST import BST
+
+        # Create a parallel BST to compare structure against the AVL
+        bst = BST()
+
+        # Insert each flight into both trees
+        for v in (data.get("flights") or data.get("vuelos")):
+            flight = Flight(
+                # Accept both English and Spanish field names
+                id=v.get("code") or v.get("codigo"),
+                origin=v.get("origin") or v.get("origen"),
+                destiny=v.get("destiny") or v.get("destino"),
+                departureTime=v.get("departureTime") or v.get("horaSalida"),
+                basePrice=v.get("basePrice") or v.get("precioBase"),
+                # Final price starts equal to base price on initial load
+                finalPrice=v.get("basePrice") or v.get("precioBase"),
+                passengers=v.get("passengers") or v.get("pasajeros"),
+                # Use explicit None check for booleans to avoid False being skipped by "or"
+                promotion=(
+                    v.get("promotion")
+                    if v.get("promotion") is not None
+                    else v.get("promocion", False)
+                ),
+                alert=(
+                    v.get("alert")
+                    if v.get("alert") is not None
+                    else v.get("alerta", False)
+                ),
+            )
+            # AVL self-balances automatically after each insert
+            flight_service._tree.insert(flight)
+            # BST inserts without balancing, used only for comparison
+            bst.insert(flight)
+
+        # Apply depth penalties now that the full tree is built
+        flight_service.applyDepthPenalty()
+
+        avl_root = flight_service._tree.getRoot()
+        bst_root = bst.getRoot()
+
+        # Return properties of both trees for the comparison window
+        return (
+            jsonify(
+                {
+                    "mode": "insertion",
+                    "avl": {
+                        "root": avl_root.getValue() if avl_root else None,
+                        "depth": flight_service._tree.getDepth(),
+                        "leaves": flight_service._tree.countLeaves(),
+                    },
+                    "bst": {
+                        "root": bst_root.getValue() if bst_root else None,
+                        "depth": bst.getDepth(),
+                        "leaves": bst.countLeaves(),
+                    },
+                }
+            ),
+            200,
+        )
+
+    # --- TOPOLOGY MODE ---
+    # Detected when the JSON root node has a "code" or "codigo" field directly
+    elif "code" in data or "codigo" in data:
+        # Reconstruct the tree respecting the exact parent-child structure in the JSON
+        flight_service._tree.buildFromTopology(data)
+
+        # Recalculate depth penalties after reconstruction
+        flight_service.applyDepthPenalty()
+
+        root = flight_service._tree.getRoot()
+        return (
+            jsonify(
+                {
+                    "mode": "topology",
+                    "avl": {
+                        "root": root.getValue() if root else None,
+                        "depth": flight_service._tree.getDepth(),
+                        "leaves": flight_service._tree.countLeaves(),
+                    },
+                }
+            ),
+            200,
+        )
+
+    # --- UNKNOWN FORMAT ---
+    else:
+        return jsonify({"error": "Unrecognized JSON format"}), 400
+
+
 # ===============================
 # GET /flights - List all flights
 # ===============================
@@ -73,8 +175,11 @@ def list_flights():
             - passengers: Number of passengers
     """
     flights = flight_service.get_all_flights()
+    
+    # If tree is empty, return empty list instead of crashing
+    if not flights:
+        return jsonify([])
 
-    # Convert Flight objects to dictionaries for JSON serialization
     flights_data = [
         {
             "id": f.getValue(),
@@ -83,7 +188,6 @@ def list_flights():
             "basePrice": f.getBasePrice(),
             "finalPrice": f.getFinalPrice(),
             "passengers": f.getPassengers(),
-            "priority": f.getPriority(),
         }
         for f in flights
     ]

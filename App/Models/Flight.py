@@ -16,6 +16,8 @@ class Flight:
         _parent (Flight): Reference to the parent node in the AVL tree.
         _leftChild (Flight): Reference to the left child node in the AVL tree.
         _rightChild (Flight): Reference to the right child node in the AVL tree.
+        _priority (int): Priority level for balancing in the AVL tree.
+        _isCritical (bool): Flag indicating if the flight is critical (used for depth penalty
     Methods:
         Getters: Retrieve values for all flight attributes and tree node references.
         Setters: Modify values for all flight attributes and tree node references.
@@ -32,6 +34,7 @@ class Flight:
         passengers,
         promotion,
         alert,
+        priority=1,
     ):
         self._id = id
         self._origin = origin
@@ -47,6 +50,7 @@ class Flight:
         self._rightChild = None
         # Flag to indicate if the flight is critical (used for depth penalty)
         self._isCritical = False
+        self._priority = priority
 
     def getValue(self):
         return self._id
@@ -83,6 +87,9 @@ class Flight:
 
     def getRightChild(self):
         return self._rightChild
+
+    def getPriority(self):
+        return self._priority
 
     def setValue(self, id):
         self._id = id
@@ -125,3 +132,6 @@ class Flight:
 
     def setIsCritical(self, val):
         self._isCritical = val
+
+    def setPriority(self, priority):
+        self._priority = priority

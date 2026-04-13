@@ -39,17 +39,17 @@ class JSONLoader:
 
         for v in flights:
             flight = Flight(
-                id=v["code"],
-                origin=v["origin"],
-                destiny=v["destination"],
-                departureTime=v["departureTime"],
-                basePrice=v["basePrice"],
-                finalPrice=v["finalPrice"],
-                passengers=v["passengers"],
-                promotion=v["promotion"],
-                alert=v["alert"],
-                priority=v.get("priority", 3),  # Default priority to 3 if not provided
-            )
+            id=v.get("code") or v.get("codigo"),
+            origin=v.get("origin") or v.get("origen"),
+            destiny=v.get("destiny") or v.get("destino"),
+            departureTime=v.get("departureTime") or v.get("horaSalida"),
+            basePrice=v.get("basePrice") or v.get("precioBase"),
+            finalPrice=v.get("finalPrice") or v.get("precioFinal") or v.get("basePrice") or v.get("precioBase"),
+            passengers=v.get("passengers") or v.get("pasajeros"),
+            promotion=v.get("promotion") if v.get("promotion") is not None else v.get("promocion", False),
+            alert=v.get("alert") if v.get("alert") is not None else v.get("alerta", False),
+            priority=v.get("priority") or v.get("prioridad", 0)
+        )
             self.avl.insert(flight)
             self.bst.insert(flight)
 
