@@ -331,7 +331,7 @@ class BST:
 
             # Create a Flight instance with the JSON fields
             flight = Flight(
-                id=data.get("code") or data.get("codigo"),
+                id=str(data.get("code") or data.get("codigo") or data.get("id")),
                 origin=data.get("origin") or data.get("origen"),
                 destiny=data.get("destiny") or data.get("destino"),
                 departureTime=data.get("departureTime") or data.get("horaSalida"),
@@ -434,7 +434,7 @@ class BST:
 
         # If it is an AVL tree, add balancing information
         # (The AVL class inherits from BST so verify using isinstance)
-        from AVL import AVL
+        from App.Models.AVL import AVL
 
         if isinstance(self, AVL):
             node_data["height"] = self.getHeightNode(node)

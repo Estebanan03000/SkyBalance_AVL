@@ -30,6 +30,7 @@ class Flight_Service:
         self._history = Stack()
         self._mode = mode
         self._max_depth = None  # It is configured before loading the JSON
+        self._versions = {}
         # Initialize the tree according to the mode
         if mode == "Stress":
             self._tree = BST()
@@ -432,20 +433,46 @@ class Flight_Service:
 
         # Return the deleted flight ID so the frontend knows which one was removed
         return target_id
+    def save_version(self, name: str):
+        """Saves a complete snapshot of the current tree with the given name."""
+        if not name or not name.strip():
+            raise Exception("Version name cannot be empty")
+        snapshot = self._tree.serialize_to_dict()
+        self._versions[name] = {
+            "snapshot": snapshot,
+            "max_depth": self._max_depth
+        }
+
+    def restore_version(self, name: str):
+        """Restores the tree to the state saved under the given name."""
+        if name not in self._versions:
+            raise Exception(f"Version '{name}' does not exist")
+        version = self._versions[name]
+        self._tree = AVL()
+        if version["snapshot"] is not None:
+            self._tree.buildFromTopology(version["snapshot"])
+        self._max_depth = version["max_depth"]
+        self.applyDepthPenalty()
+        self._history = Stack()
+
+    def list_versions(self):
+        """Returns the names of all saved versions."""
+        return list(self._versions.keys())
     
     #Method to get the different kinds of tree traversals for the current tree (AVL or BST on stress mode)
     def get_traversal(self, traversal_type):
         if traversal_type == "inorder":
-            return [n.getValue() for n in self._tree.inOrderTraversal()]
+            return [n.getValue() for n in (self._tree.inOrderTraversal() or [])]
 
         elif traversal_type == "preorder":
-            return [n.getValue() for n in self._tree.preOrderTraversal()]
+            return [n.getValue() for n in (self._tree.preOrderTraversal() or [])]
 
         elif traversal_type == "postorder":
-            return [n.getValue() for n in self._tree.posOrderTraversal()]
+            return [n.getValue() for n in (self._tree.posOrderTraversal() or [])]
 
         elif traversal_type == "levelorder":
-            return self._tree.breadthFirstSearch()
+            nodes = self._tree.breadthFirstSearch() or []
+            return [n.getValue() if hasattr(n, "getValue") else n for n in nodes]
         
         else:
             raise Exception("Invalid traversal type")
