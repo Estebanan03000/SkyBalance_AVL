@@ -15,8 +15,7 @@ const selectors = {
     undoAction: document.getElementById("undo-action"),
     processQueue: document.getElementById("process-queue"),
     deleteLowest: document.getElementById("delete-lowest"),
-    traverseDfs: document.getElementById("traverse-dfs"),
-    traverseBfs: document.getElementById("traverse-bfs"),
+    traversalResult: document.getElementById("traversal-result"),
     jsonInput: document.getElementById("json-file-input"),
     altura: document.getElementById("altura"),
     hojas: document.getElementById("hojas"),
@@ -95,11 +94,41 @@ function renderMetrics(metrics) {
 /**
  * Display the traversal result returned by the API.
  */
+document.getElementById("tree-traverse").addEventListener("click", async () => {
+    try {
+        const response = await fetch("/tree/traversal/type");
+
+        if (!response.ok) {
+            console.error("Error HTTP:", response.status);
+            return;
+        }
+
+        const data = await response.json();
+
+        renderTraversal(data);
+        console.log(selectors.traversalResult);
+
+    } catch (error) {
+        console.error("Error fetching traversal:", error);
+    }
+});
+
 function renderTraversal(result) {
     selectors.traversalResult.innerHTML = `
         <div class="traversal-box">
-        <h4>Traversal ${result.order}</h4>
-        <p>${result.nodes.join(" → ") || "No nodes available"}</p>
+
+            <h4>Inorder</h4>
+            <p>${result.inorder?.join(" → ") || "No data"}</p>
+
+            <h4>Preorder</h4>
+            <p>${result.preorder?.join(" → ") || "No data"}</p>
+
+            <h4>Postorder</h4>
+            <p>${result.postorder?.join(" → ") || "No data"}</p>
+
+            <h4>Level Order (BFS)</h4>
+            <p>${result.levelorder?.join(" → ") || "No data"}</p>
+
         </div>
     `;
 }

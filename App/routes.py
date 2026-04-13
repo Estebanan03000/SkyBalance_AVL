@@ -6,6 +6,7 @@ from App.Models.Flight import Flight
 from datetime import datetime
 from App.Services.Metrics_Service import Metrics_Service
 from App.Utils.Tree_Render import TreeRenderer
+from App.Models.Flight import Flight as flight_model
 
 # Create an instance of the Flight_Service and Metrics_Service.
 # These will stay in memory while the Flask application is running.
@@ -395,3 +396,13 @@ def render_tree():
         return jsonify({"image": image}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@main_routes.route("/tree/traversal/type", methods=["GET"])
+def dfs_traversal():
+    return jsonify({
+        "inorder": flight_service.get_traversal("inorder"),
+        "preorder": flight_service.get_traversal("preorder"),
+        "postorder": flight_service.get_traversal("postorder"),
+        "levelorder": flight_service.get_traversal("levelorder"),
+    })
