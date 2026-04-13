@@ -1,11 +1,13 @@
 import os
 import json
+import re
 from flask import Blueprint, request, jsonify
 from App.Services.Flight_Service import Flight_Service
 from App.Models.Flight import Flight
 from datetime import datetime
 from App.Services.Metrics_Service import Metrics_Service
 from App.Utils.Tree_Render import TreeRenderer
+from App.Utils.JSON_Handler import JSONHandler
 
 # Create an instance of the Flight_Service and Metrics_Service.
 # These will stay in memory while the Flask application is running.
@@ -14,6 +16,31 @@ metrics_service = Metrics_Service(flight_service)
 
 # Create a Flask blueprint to group the application's API routes.
 main_routes = Blueprint("main", __name__)
+
+
+def _normalize_flight_id(raw_id):
+    """Normalize IDs so tree comparisons always use integers.
+
+    Accepts values like 400, "400" or "SB400" and returns 400.
+    """
+    if raw_id is None:
+        raise ValueError("Flight ID is required")
+
+    if isinstance(raw_id, (int, float)):
+        return int(raw_id)
+
+    raw_text = str(raw_id).strip()
+    if not raw_text:
+        raise ValueError("Flight ID is required")
+
+    if raw_text.isdigit():
+        return int(raw_text)
+
+    match = re.search(r"(\d+)$", raw_text)
+    if match:
+        return int(match.group(1))
+
+    raise ValueError(f"Invalid flight ID format: {raw_id}")
 
 
 def _build_flight_from_payload(data):
@@ -28,7 +55,7 @@ def _build_flight_from_payload(data):
         date_value = datetime.fromisoformat(date_value)
 
     return Flight(
-        data.get("id") or data.get("codigo"),
+        _normalize_flight_id(data.get("id") or data.get("codigo") or data.get("code")),
         data.get("origin") or data.get("origen"),
         data.get("destiny") or data.get("destino"),
         date_value,
@@ -75,32 +102,36 @@ def load_flights():
 
         # Insert each flight into both trees
         for v in (data.get("flights") or data.get("vuelos")):
-            flight = Flight(
-                # Accept both English and Spanish field names
-                id=v.get("code") or v.get("codigo"),
-                origin=v.get("origin") or v.get("origen"),
-                destiny=v.get("destiny") or v.get("destino"),
-                departureTime=v.get("departureTime") or v.get("horaSalida"),
-                basePrice=v.get("basePrice") or v.get("precioBase"),
+            flight_payload = {
+                "id": _normalize_flight_id(v.get("id") or v.get("code") or v.get("codigo")),
+                "origin": v.get("origin") or v.get("origen"),
+                "destiny": v.get("destiny") or v.get("destino"),
+                "departureTime": v.get("departureTime") or v.get("horaSalida"),
+                "basePrice": v.get("basePrice") or v.get("precioBase"),
                 # Final price starts equal to base price on initial load
-                finalPrice=v.get("basePrice") or v.get("precioBase"),
-                passengers=v.get("passengers") or v.get("pasajeros"),
+                "finalPrice": v.get("basePrice") or v.get("precioBase"),
+                "passengers": v.get("passengers") or v.get("pasajeros"),
                 # Use explicit None check for booleans to avoid False being skipped by "or"
-                promotion=(
+                "promotion": (
                     v.get("promotion")
                     if v.get("promotion") is not None
                     else v.get("promocion", False)
                 ),
-                alert=(
+                "alert": (
                     v.get("alert")
                     if v.get("alert") is not None
                     else v.get("alerta", False)
                 ),
-            )
+            }
+
+            # Build independent nodes to avoid parent/child pointer collisions
+            # between AVL and BST trees.
+            flight_avl = Flight(**flight_payload)
+            flight_bst = Flight(**flight_payload)
             # AVL self-balances automatically after each insert
-            flight_service._tree.insert(flight)
+            flight_service._tree.insert(flight_avl)
             # BST inserts without balancing, used only for comparison
-            bst.insert(flight)
+            bst.insert(flight_bst)
 
         # Apply depth penalties now that the full tree is built
         flight_service.applyDepthPenalty()
@@ -217,18 +248,20 @@ def create_flight():
         JSON message confirming the creation with HTTP status 201.
     """
     data = request.get_json()
-
-    flight = Flight(
-        data["id"],
-        data["origin"],
-        data["destiny"],
-        datetime.strptime(data["date"], "%Y-%m-%d %H:%M:%S"),
-        data["basePrice"],
-        data["finalPrice"],
-        data["passengers"],
-        data.get("discount", 0),
-        data.get("sold", False),
-    )
+    try:
+        flight = Flight(
+            _normalize_flight_id(data.get("id") or data.get("codigo") or data.get("code")),
+            data.get("origin") or data.get("origen"),
+            data.get("destiny") or data.get("destino"),
+            datetime.strptime(data["date"], "%Y-%m-%d %H:%M:%S"),
+            data.get("basePrice") or data.get("precioBase"),
+            data.get("finalPrice") or data.get("precioFinal") or data.get("basePrice") or data.get("precioBase"),
+            data.get("passengers") or data.get("pasajeros"),
+            data.get("discount", data.get("promotion", data.get("promocion", 0))),
+            data.get("sold", data.get("alert", data.get("alerta", False))),
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        return jsonify({"error": f"Invalid flight payload: {error}"}), 400
 
     flight_service.create_flight(flight)
     return jsonify({"message": "Flight created"}), 201
@@ -289,6 +322,10 @@ def delete_flight(flight_id):
 def export_tree():
     """
     Endpoint to export the complete AVL tree structure to a JSON file.
+    
+    Supports two export modes:
+    1. "insertion" - Export as array of flights (for re-insertion)
+    2. "topology" - Export as tree structure (preserves exact topology)
 
     The exported JSON preserves the hierarchical parent-child structure,
     node heights, balance factors (for AVL), and all flight details.
@@ -296,6 +333,7 @@ def export_tree():
     Expects JSON in request body:
         - filename: Name or path of the JSON file to create
                     Example: "tree_backup.json"
+        - mode: "insertion" or "topology" (default: "topology")
 
     Returns:
         JSON message confirming successful export, or an error message.
@@ -303,20 +341,28 @@ def export_tree():
     try:
         data = request.get_json()
         filename = data.get("filename", "tree_export.json")
+        mode = data.get("mode", "topology")  # Default to topology
 
-        # Export the tree to disk
-        success = flight_service.export_tree_to_json(filename)
+        # Get all flights or tree root based on mode
+        if mode == "insertion":
+            # Export all flights as an array (in order)
+            flights_list = flight_service.get_all_flights()
+            export_data = JSONHandler.export_insertion_mode(flights_list)
+        else:  # topology mode (default)
+            # Export tree structure as-is
+            root = flight_service._tree.getRoot()
+            export_data = JSONHandler.export_topology_mode(root)
 
-        if success:
-            return (
-                jsonify({"message": f"Tree exported successfully to {filename}"}),
-                200,
-            )
-        else:
-            return jsonify({"error": "Failed to export tree"}), 500
+        # Save to file
+        JSONHandler.save_to_file(export_data, filename)
+
+        return (
+            jsonify({"message": f"✅ Árbol exportado exitosamente a {filename} (Modo: {mode})"}),
+            200,
+        )
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": f"❌ Error en exportación: {str(e)}"}), 400
 
 
 # ===============================

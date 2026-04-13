@@ -1,9 +1,14 @@
 const apiBase = "";
 
+// Track the current mode for JSON operations
+let currentJsonMode = null;
+
 // Cache references to all important DOM elements used by the application.
 const selectors = {
-    loadJson: document.getElementById("load-json"),
-    saveJson: document.getElementById("save-json"),
+    loadJsonInsertion: document.getElementById("load-json-insertion"),
+    loadJsonTopology: document.getElementById("load-json-topology"),
+    saveJsonInsertion: document.getElementById("save-json-insertion"),
+    saveJsonTopology: document.getElementById("save-json-topology"),
     versionJson: document.getElementById("version-json"),
     restoreJson: document.getElementById("restore-json"),
     modeStress: document.getElementById("mode-stress"),
@@ -146,6 +151,60 @@ async function refreshView() {
 }
 
 /**
+ * Load JSON file in Insertion mode.
+ * Opens file picker to select a JSON file with "vuelos" array.
+ */
+function loadJsonInsertion() {
+    currentJsonMode = "insertion";
+    selectors.jsonInput.click();
+}
+
+/**
+ * Load JSON file in Topology mode.
+ * Opens file picker to select a JSON file with tree structure.
+ */
+function loadJsonTopology() {
+    currentJsonMode = "topology";
+    selectors.jsonInput.click();
+}
+
+/**
+ * Export the current tree to a JSON file in Insertion mode format.
+ */
+async function saveJsonInsertion() {
+    try {
+        const filename = prompt("Filename to save (Insertion mode)", "flights_insertion.json");
+        if (!filename) return;
+        const payload = await request("/tree/export", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename, mode: "insertion" }),
+        });
+        alert(payload.message);
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+/**
+ * Export the current tree to a JSON file in Topology mode format.
+ */
+async function saveJsonTopology() {
+    try {
+        const filename = prompt("Filename to save (Topology mode)", "flights_topology.json");
+        if (!filename) return;
+        const payload = await request("/tree/export", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename, mode: "topology" }),
+        });
+        alert(payload.message);
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+/**
  * Load the default local JSON file on the server and refresh the view.
  */
 async function loadJson() {
@@ -207,37 +266,51 @@ selectors.jsonInput.addEventListener("change", async (event) => {
         // Parse the text into a JavaScript object
         const jsonData = JSON.parse(text);
 
-        // Send the parsed JSON to the backend load endpoint
-        const response = await fetch("/flights/load", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(jsonData),
-        });
+        // INSERTION MODE
+        if (currentJsonMode === "insertion") {
+            const response = await fetch("/flights/load", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(jsonData),
+            });
 
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "Error loading JSON");
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Error loading JSON");
 
-        // Show different messages depending on which mode was detected by the backend
-        if (data.mode === "insertion") {
-            // Insertion mode: show comparison between AVL and BST
+            // Show AVL vs BST comparison for insertion mode
             alert(
-                `Tree loaded in insertion mode\n\n` +
-                `AVL → Root: ${data.avl.root} | Depth: ${data.avl.depth} | Leaves: ${data.avl.leaves}\n` +
-                `BST → Root: ${data.bst.root} | Depth: ${data.bst.depth} | Leaves: ${data.bst.leaves}`
+                `✅ Árbol cargado en MODO INSERCIÓN\n\n` +
+                `📊 AVL → Raíz: ${data.avl.root} | Profundidad: ${data.avl.depth} | Hojas: ${data.avl.leaves}\n` +
+                `🌳 BST → Raíz: ${data.bst.root} | Profundidad: ${data.bst.depth} | Hojas: ${data.bst.leaves}`
             );
-        } else {
-            // Topology mode: tree was rebuilt as-is from the JSON structure
-            alert(`Tree loaded in topology mode\nRoot: ${data.avl.root}`);
+        } 
+        // TOPOLOGY MODE
+        else if (currentJsonMode === "topology") {
+            const response = await fetch("/flights/load", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(jsonData),
+            });
+
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "Error loading JSON");
+
+            // Show topology mode confirmation
+            alert(
+                `✅ Árbol cargado en MODO TOPOLOGÍA\n\n` +
+                `📊 Raíz: ${data.avl.root} | Profundidad: ${data.avl.depth} | Hojas: ${data.avl.leaves}`
+            );
         }
 
         // Refresh the tree visualization and metrics on screen
         refreshView();
 
     } catch (error) {
-        alert("Error: " + error.message);
+        alert("❌ Error: " + error.message);
     } finally {
         // Reset the file input so the same file can be loaded again if needed
         selectors.jsonInput.value = "";
+        currentJsonMode = null;
     }
 });
 
@@ -397,8 +470,12 @@ async function traverse(type) {
  * Attach click listeners to all interactive buttons.
  */
 function attachEvents() {
-    selectors.loadJson.addEventListener("click", loadJson);
-    selectors.saveJson.addEventListener("click", saveJson);
+    // New specific mode buttons
+    selectors.loadJsonInsertion.addEventListener("click", loadJsonInsertion);
+    selectors.loadJsonTopology.addEventListener("click", loadJsonTopology);
+    selectors.saveJsonInsertion.addEventListener("click", saveJsonInsertion);
+    selectors.saveJsonTopology.addEventListener("click", saveJsonTopology);
+    
     selectors.versionJson.addEventListener("click", versionJson);
     selectors.restoreJson.addEventListener("click", restoreJson);
     selectors.modeStress.addEventListener("click", () => switchMode("Stress"));
@@ -418,3 +495,256 @@ window.addEventListener("DOMContentLoaded", () => {
     attachEvents();
     refreshView();
 });
+
+function normalizeFlightId(rawId) {
+    const value = String(rawId || "").trim();
+    if (!value) return null;
+
+    if (/^\d+$/.test(value)) {
+        return Number(value);
+    }
+
+    const match = value.match(/(\d+)$/);
+    if (match) {
+        return Number(match[1]);
+    }
+
+    return null;
+}
+/**
+ * Ask the user for flight details and create a new node in the tree.
+ */
+async function insertNode() {
+    try {
+        const id = prompt("ID del Vuelo (ej: 800 o SB800)", "SB800");
+        const origin = prompt("Origen", "Bogotá");
+        const destiny = prompt("Destino", "Medellín");
+        const date = prompt("Fecha y hora (YYYY-MM-DD HH:MM:SS)", "2026-01-01 12:00:00");
+        const basePrice = prompt("Precio Base", "100");
+        const finalPrice = prompt("Precio Final", "120");
+        const passengers = prompt("Pasajeros", "100");
+
+        // Validate required fields
+        if (!id || !origin || !destiny || !date) {
+            return alert("❌ Campos requeridos: ID, Origen, Destino y Fecha");
+        }
+
+        // Validate number fields
+        const numId = normalizeFlightId(id);
+        const numBase = Number(basePrice) || 0;
+        const numFinal = Number(finalPrice) || numBase;
+        const numPass = Number(passengers) || 0;
+
+        if (numId === null || isNaN(numId) || numId <= 0) {
+            return alert("❌ El ID debe ser numérico o tipo SB### (ej: SB800)");
+        }
+
+        const payload = await request("/flights", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                id: numId,
+                origin: origin.trim(),
+                destiny: destiny.trim(),
+                date: date.trim(),
+                basePrice: numBase,
+                finalPrice: numFinal,
+                passengers: numPass,
+                discount: 0,
+                sold: false
+            }),
+        });
+        alert(`✅ Vuelo ${numId} insertado correctamente\n${payload.message || ""}`);
+        refreshView();
+    } catch (error) {
+        alert(`❌ Error al insertar: ${error.message}`);
+    }
+}
+/**
+ * Request AVL verification from the backend and show the results.
+ */
+async function verifyAvl() {
+    try {
+        const payload = await request("/tree/verify");
+        const balanced = payload.balanced ? "✅ SÍ (AVL válido)" : "❌ NO (no es un AVL válido)";
+        const mode = payload.mode || "Desconocido";
+        const inconsistent = payload.inconsistent_nodes;
+        
+        let message = `🔍 VERIFICACIÓN AVL\n\n`;
+        message += `Árbol Balanceado: ${balanced}\n`;
+        message += `Modo: ${mode}\n`;
+        
+        if (inconsistent && inconsistent.length > 0) {
+            message += `\n⚠️ Nodos con desbalance:\n`;
+            inconsistent.forEach(node => {
+                message += `  • ID ${node.id}: Factor = ${node.balance_factor}\n`;
+            });
+        } else {
+            message += `\n✅ Todos los nodos están balanceados`;
+        }
+        
+        alert(message);
+    } catch (error) {
+        alert(`❌ Error en verificación: ${error.message}`);
+    }
+}
+/**
+ * Switch the tree evaluation mode between BST stress mode and AVL global balance mode.
+ */
+async function switchMode(mode) {
+    try {
+        const payload = await request("/config/mode", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode }),
+        });
+        
+        const modeDisplay = mode === "Stress" ? "🚨 ESTRÉS (BST)" : "⚖️ BALANCE GLOBAL (AVL)";
+        selectors.currentMode.textContent = modeDisplay;
+        alert(`${payload.message || "Modo cambiado"}\n\n${modeDisplay}`);
+        refreshView();
+    } catch (error) {
+        alert(`❌ Error al cambiar modo: ${error.message}`);
+    }
+}
+/**
+ * Request a traversal from the backend and display the result.
+ */
+async function traverse(type) {
+    try {
+        const payload = await request(`/tree/traverse?type=${type}`);
+        
+        // Map type names for display
+        const typeNames = {
+            "DFS": "🌳 DFS (Pre-Order)",
+            "BFS": "📊 BFS (Breadth-First)",
+            "INORDER": "📈 In-Order",
+            "POSTORDER": "📉 Post-Order"
+        };
+        
+        const displayType = typeNames[type] || payload.order || type;
+        
+        if (!payload.nodes || payload.nodes.length === 0) {
+            alert(`${displayType}\n\nÁrbol vacío - No hay nodos para recorrer`);
+            return;
+        }
+        
+        // Display in traversal result panel
+        const nodesText = payload.nodes.join(" → ");
+        const countText = `${payload.count} nodo${payload.count !== 1 ? 's' : ''}`;
+        
+        selectors.traversalResult.innerHTML = `
+            <div class="traversal-box">
+                <h4>${displayType}</h4>
+                <p><strong>Conteo:</strong> ${countText}</p>
+                <p><strong>Secuencia:</strong> ${nodesText}</p>
+            </div>
+        `;
+        
+        alert(`${displayType}\n\nTotal: ${countText}\nSecuencia: ${nodesText}`);
+    } catch (error) {
+        alert(`❌ Error en traversal: ${error.message}`);
+    }
+}
+/**
+ * Undo the previous tree operation.
+ */
+async function undoAction() {
+    try {
+        const payload = await request("/tree/undo", { method: "POST" });
+        alert(`↩️ DESHACER\n\n${payload.message || "Operación deshecha"}`);
+        refreshView();
+    } catch (error) {
+        alert(`❌ Error en undo: ${error.message}`);
+    }
+}
+/**
+ * Cancel a subtree rooted at the specified flight node.
+ */
+async function cancelSubtree() {
+    try {
+        const id = prompt("ID del vuelo raíz para cancelar subárbol", "");
+        if (!id || isNaN(Number(id))) {
+            return alert("❌ Debes ingresar un ID válido");
+        }
+        
+        const confirmed = confirm(`⚠️ ¿Seguro de cancelar el subárbol con raíz ID ${id}?\n\nEsto eliminará este vuelo y todos sus descendientes.`);
+        if (!confirmed) return;
+        
+        const payload = await request("/tree/cancel-subtree", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: Number(id) }),
+        });
+        
+        const deletedText = payload.deleted_ids ? payload.deleted_ids.join(", ") : "N/A";
+        alert(`✅ ${payload.message}\n\n📊 Cantidad eliminada: ${payload.deleted_count}\n🆔 IDs: ${deletedText}`);
+        refreshView();
+    } catch (error) {
+        alert(`❌ Error al cancelar subárbol: ${error.message}`);
+    }
+}
+/**
+ * Send a list of flight objects to the queue processing endpoint.
+ */
+async function processQueue() {
+    try {
+        const raw = prompt(
+            "Ingresa un JSON array de vuelos para procesar\n\n" +
+            "Ejemplo:\n" +
+            '[{"id": 1, "origin": "BOG", "destiny": "MDE", "basePrice": 100, "passengers": 50}]',
+            '[]'
+        );
+        if (!raw || raw === '[]') {
+            return alert("⚠️ Cola vacía");
+        }
+        
+        let flights;
+        try {
+            flights = JSON.parse(raw);
+        } catch (e) {
+            return alert(`❌ JSON inválido: ${e.message}`);
+        }
+        
+        if (!Array.isArray(flights)) {
+            return alert("❌ Debes enviar un array JSON válido");
+        }
+        
+        const payload = await request("/queue/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ flights }),
+        });
+        
+        const processed = payload.processed || 0;
+        const message = `${payload.message || "Cola procesada"}\n\n📊 Vuelos procesados: ${processed}`;
+        alert(message);
+        
+        selectors.queueStatus.innerHTML = `
+            <p>✅ ${processed} vuelo${processed !== 1 ? 's' : ''} procesado${processed !== 1 ? 's' : '}'}</p>
+        `;
+        refreshView();
+    } catch (error) {
+        alert(`❌ Error al procesar cola: ${error.message}`);
+    }
+}
+/**
+ * Prompt for a flight ID and delete the corresponding node.
+ */
+async function deleteNode() {
+    try {
+        const id = prompt("ID del vuelo a eliminar", "");
+        if (!id || isNaN(Number(id))) {
+            return alert("❌ Debes ingresar un ID válido");
+        }
+        
+        const confirmed = confirm(`⚠️ ¿Seguro de eliminar el vuelo ${id}?`);
+        if (!confirmed) return;
+        
+        const payload = await request(`/flights/${Number(id)}`, { method: "DELETE" });
+        alert(`✅ Vuelo ${id} eliminado correctamente\n${payload.message || ""}`);
+        refreshView();
+    } catch (error) {
+        alert(`❌ Error al eliminar: ${error.message}`);
+    }
+}

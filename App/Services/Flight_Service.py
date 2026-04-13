@@ -41,7 +41,7 @@ class Flight_Service:
             self._tree = BST()
         else:
             # Get all flights in the current tree before changing
-            old_flights = self.get_all_flights()
+            old_flights = self.get_all_flights() or []
             self._tree = AVL()
             for flight in old_flights:
                 self._tree.insert(flight)
@@ -152,32 +152,46 @@ class Flight_Service:
         self._history.push(("insert", flight))
 
     def undo(self):
-        if self._history.is_empty():
-            raise Exception("The history is empty")
+        while not self._history.is_empty():
+            action = self._history.pop()
+            action_type = action[0] if isinstance(action, tuple) and len(action) > 0 else None
 
-        action = self._history.pop()
+            if action_type == "delete":
+                # Stored as ("delete", flight_id) to undo an insertion.
+                flight_id = action[1] if len(action) > 1 else None
+                if flight_id is None:
+                    continue
+                self._tree.delete(flight_id)
+                return ("delete", flight_id)
 
-        if action[0] == "delete":
-            # Re-insert the flight
-            self._tree.insert(action[1])
-        elif action[0] == "insert":
-            # Delete the flight (undo creation)
-            self._tree.delete(action[1].getValue())
-        elif action[0] == "update":
-            # Revert the old values
-            flight_id, old_values = action[1], action[2]
-            flight = self.get_flight(flight_id)
-            if flight:
-                if "origin" in old_values:
-                    flight.setOrigin(old_values["origin"])
-                if "destiny" in old_values:
-                    flight.setDestiny(old_values["destiny"])
-                if "basePrice" in old_values:
-                    flight.setBasePrice(old_values["basePrice"])
-                if "finalPrice" in old_values:
-                    flight.setFinalPrice(old_values["finalPrice"])
-                if "passengers" in old_values:
-                    flight.setPassengers(old_values["passengers"])
+            if action_type == "insert":
+                # Stored as ("insert", flight_obj) to undo a deletion.
+                flight = action[1] if len(action) > 1 else None
+                if flight is None or not hasattr(flight, "getValue"):
+                    continue
+                self._tree.insert(flight)
+                return ("insert", flight.getValue())
+
+            if action_type == "update":
+                # Stored as ("update", flight_id, old_values).
+                if len(action) < 3:
+                    continue
+                flight_id, old_values = action[1], action[2]
+                flight = self.get_flight(flight_id)
+                if flight:
+                    if "origin" in old_values:
+                        flight.setOrigin(old_values["origin"])
+                    if "destiny" in old_values:
+                        flight.setDestiny(old_values["destiny"])
+                    if "basePrice" in old_values:
+                        flight.setBasePrice(old_values["basePrice"])
+                    if "finalPrice" in old_values:
+                        flight.setFinalPrice(old_values["finalPrice"])
+                    if "passengers" in old_values:
+                        flight.setPassengers(old_values["passengers"])
+                return ("update", flight_id)
+
+        raise Exception("No hay operaciones válidas para deshacer")
 
     def multi_inserts(self, flights_list):
         """
@@ -205,20 +219,21 @@ class Flight_Service:
         based on rotation count changes.
         """
 
-        # 1. Save rotation counters BEFORE insertion
-        before = self._tree.getRotationCounts().copy()
+        # 1. Save rotation counters BEFORE insertion (only AVL has them)
+        has_rotations = hasattr(self._tree, "getRotationCounts")
+        before = self._tree.getRotationCounts().copy() if has_rotations else {}
 
         # 2. Insert into AVL
         self._tree.insert(flight)
 
         # 3. Save rotation counters AFTER insertion
-        after = self._tree.getRotationCounts()
+        after = self._tree.getRotationCounts() if has_rotations else {}
 
         # 4. Compare counters to detect if a conflict occurred
         rotation_detected = None
 
         for rotation_type in ["LL", "RR", "LR", "RL"]:
-            if after[rotation_type] > before[rotation_type]:
+            if after.get(rotation_type, 0) > before.get(rotation_type, 0):
                 rotation_detected = rotation_type
                 break
 

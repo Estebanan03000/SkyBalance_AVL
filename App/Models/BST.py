@@ -88,30 +88,34 @@ class BST:
                 # Pass the search request to the left child
                 return self.__search(currentRoot.getLeftChild(), value)
 
+    # Method to return rotation counts (BST has no rotations, returns zeros for compatibility)
+    def getRotationCounts(self):
+        return {"RR": 0, "LL": 0, "RL": 0, "LR": 0}
+
     # Method for breadth-first traversal
     def breadthFirstSearch(self):
         # Check if the tree is empty
         if self._root is None:
             print("The tree is empty.")
-        else:
-            # Enqueue the root first
-            queue = Queue()
-            queue.enqueue(self._root)
-            # Traversal result
-            result = []
-            # While there are elements in the queue (nodes)
-            # Process with: dequeue, print and enqueue children
-            while not queue.is_empty():
-                # Dequeue
-                currentNode = queue.dequeue()
-                # Print which is add to result
-                result.append(currentNode.getValue())
-                # Validate that it has a left child to enqueue it
-                if currentNode.getLeftChild() is not None:
-                    queue.enqueue(currentNode.getLeftChild())
-                # Validate that it has a right child to enqueue it
-                if currentNode.getRightChild() is not None:
-                    queue.enqueue(currentNode.getRightChild())
+            return []
+        # Enqueue the root first
+        queue = Queue()
+        queue.enqueue(self._root)
+        # Traversal result
+        result = []
+        # While there are elements in the queue (nodes)
+        # Process with: dequeue, print and enqueue children
+        while not queue.is_empty():
+            # Dequeue
+            currentNode = queue.dequeue()
+            # Append the node (consistent with other traversal methods)
+            result.append(currentNode)
+            # Validate that it has a left child to enqueue it
+            if currentNode.getLeftChild() is not None:
+                queue.enqueue(currentNode.getLeftChild())
+            # Validate that it has a right child to enqueue it
+            if currentNode.getRightChild() is not None:
+                queue.enqueue(currentNode.getRightChild())
         return result
 
     # Method for depth-first traversal type Pre-Order
@@ -214,7 +218,10 @@ class BST:
 
     # Method that allows deleting a leaf node from the tree
     def __deleteLeafNode(self, node):
-        if node.getValue() < node.getParent().getValue():
+        # If the node is the root and a leaf, the tree becomes empty.
+        if node.getParent() is None:
+            self._root = None
+        elif node.getValue() < node.getParent().getValue():
             node.getParent().setLeftChild(None)
         else:
             node.getParent().setRightChild(None)
@@ -227,14 +234,17 @@ class BST:
         else:
             child = node.getRightChild()
 
+        # If the node is the root, promote its only child as the new root.
+        if node.getParent() is None:
+            self._root = child
+            child.setParent(None)
         # Determine whether the child should become the left or right child of the parent.
-        if child.getValue() < node.getParent().getValue():
+        elif child.getValue() < node.getParent().getValue():
             node.getParent().setLeftChild(child)
         else:
             node.getParent().setRightChild(child)
-
-        # Update the parent reference of the promoted child.
-        child.setParent(node.getParent())
+            # Update the parent reference of the promoted child.
+            child.setParent(node.getParent())
 
         # Clear the deleted node's references for cleanup.
         node.setParent(None)
