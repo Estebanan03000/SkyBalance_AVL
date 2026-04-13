@@ -75,7 +75,7 @@ def load_flights():
             for v in (data.get("flights") or data.get("vuelos")):
                 # Separate objects so parent pointers don't collide between trees
                 flight_avl = Flight(
-                    id=v.get("code") or v.get("codigo"),
+                    id=str(v.get("code") or v.get("codigo")),
                     origin=v.get("origin") or v.get("origen"),
                     destiny=v.get("destiny") or v.get("destino"),
                     departureTime=v.get("departureTime") or v.get("horaSalida"),
@@ -86,7 +86,7 @@ def load_flights():
                     alert=v.get("alert") if v.get("alert") is not None else v.get("alerta", False),
                 )
                 flight_bst = Flight(
-                    id=v.get("code") or v.get("codigo"),
+                    id=str(v.get("code") or v.get("codigo")),
                     origin=v.get("origin") or v.get("origen"),
                     destiny=v.get("destiny") or v.get("destino"),
                     departureTime=v.get("departureTime") or v.get("horaSalida"),
@@ -205,22 +205,33 @@ def create_flight():
     Returns:
         JSON message confirming the creation with HTTP status 201.
     """
-    data = request.get_json()
+    try:
+        import App.routes as current_module
+        fs = current_module.flight_service
 
-    flight = Flight(
-        data["id"],
-        data["origin"],
-        data["destiny"],
-        datetime.strptime(data["date"], "%Y-%m-%d %H:%M:%S"),
-        data["basePrice"],
-        data["finalPrice"],
-        data["passengers"],
-        data.get("discount", 0),
-        data.get("sold", False),
-    )
+        data = request.get_json()
 
-    flight_service.create_flight(flight)
-    return jsonify({"message": "Flight created"}), 201
+        flight = Flight(
+            str(data["id"]),
+            data["origin"],
+            data["destiny"],
+            data["date"],
+            data["basePrice"],
+            data["finalPrice"],
+            data["passengers"],
+            data.get("discount", 0),
+            data.get("sold", False),
+        )
+
+        fs.create_flight(flight)
+        return jsonify({"message": "Flight created"}), 201
+
+    except Exception as e:
+        import traceback
+        return jsonify({
+            "error": str(e),
+            "detail": traceback.format_exc()
+        }), 500
 
 
 # ===============================

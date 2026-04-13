@@ -26,7 +26,25 @@ const selectors = {
     traversalResult: document.getElementById("traversal-result"),
     currentMode: document.getElementById("current-mode"),
     queueStatus: document.getElementById("queue-status"),
+    maxDepthInput: document.getElementById("max-depth-input"),
+    setMaxDepth: document.getElementById("set-max-depth"),
 };
+
+async function setMaxDepth() {
+    const depth = Number(selectors.maxDepthInput.value);
+    if (isNaN(depth) || depth < 0) return alert("Enter a valid depth");
+    try {
+        const payload = await request("/config/max-depth", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ maxDepth: depth }),
+        });
+        alert(payload.message);
+        refreshView();
+    } catch (error) {
+        alert(error.message);
+    }
+}
 
 /**
  * Perform an HTTP request to the backend API and return parsed JSON.
@@ -465,6 +483,7 @@ function attachEvents() {
     selectors.deleteLowest.addEventListener("click", deleteLowestProfitability);
     selectors.traverseDfs.addEventListener("click", () => traverse("DFS"));
     selectors.traverseBfs.addEventListener("click", () => traverse("BFS"));
+    selectors.setMaxDepth.addEventListener("click", setMaxDepth);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
