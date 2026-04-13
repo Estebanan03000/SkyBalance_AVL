@@ -37,52 +37,73 @@ class Flight_Service:
         else:
             self._tree = AVL()
 
+    def _clone_tree_structure(self, source_tree):
+        """
+        Creates an exact copy of the tree structure (nodes and links) 
+        without reinserting. This preserves the current layout.
+        
+        Returns a tuple: (new_tree_instance, copied_root)
+        """
+        if source_tree.getRoot() is None:
+            return None
+        
+        def clone_node(node):
+            """Recursively clone a node and its children"""
+            if node is None:
+                return None
+            
+            # Create new Flight with same data
+            cloned_flight = Flight(
+                id=node.getValue(),
+                origin=node.getOrigin(),
+                destiny=node.getDestiny(),
+                departureTime=node.getDepartureTime(),
+                basePrice=node.getBasePrice(),
+                finalPrice=node.getFinalPrice(),
+                passengers=node.getPassengers(),
+                promotion=node.getPromotion(),
+                alert=node.getAlert()
+            )
+            
+            # Recursively clone children
+            left_child = clone_node(node.getLeftChild())
+            right_child = clone_node(node.getRightChild())
+            
+            # Set parent-child relationships
+            if left_child:
+                cloned_flight.setLeftChild(left_child)
+                left_child.setParent(cloned_flight)
+            
+            if right_child:
+                cloned_flight.setRightChild(right_child)
+                right_child.setParent(cloned_flight)
+            
+            return cloned_flight
+        
+        # Clone the entire structure
+        return clone_node(source_tree.getRoot())
+
     def set_mode(self, mode):
         """
         Change the tree mode between Stress (BST) and Global Balance (AVL).
-        Preserves all flight data when switching.
+        Preserves the exact tree structure when switching.
+        Only degrades/rebalances if explicitly requested or on modifications.
         """
         if self._mode == mode:
             # Already in the desired mode
             return
         
-        # Get all flights from the current tree (independent of mode)
-        current_flights = self.get_all_flights() or []
+        # Clone the current tree structure exactly (no reinsertion, no rebalancing)
+        root_clone = self._clone_tree_structure(self._tree)
         
         if mode == "Stress":
-            # Switch to BST (Stress mode)
+            # Switch to BST (Stress mode) - keeping exact structure
             self._tree = BST()
-            for flight in current_flights:
-                # Create a new Flight instance to avoid pointer corruption
-                new_flight = Flight(
-                    id=flight.getValue(),
-                    origin=flight.getOrigin(),
-                    destiny=flight.getDestiny(),
-                    departureTime=flight.getDepartureTime(),
-                    basePrice=flight.getBasePrice(),
-                    finalPrice=flight.getFinalPrice(),
-                    passengers=flight.getPassengers(),
-                    promotion=flight.getPromotion(),
-                    alert=flight.getAlert()
-                )
-                self._tree.insert(new_flight)
+            self._tree._root = root_clone
         else:
-            # Switch to AVL (Global Balance mode)
+            # Switch to AVL (Global Balance mode) - keeping exact structure
             self._tree = AVL()
-            for flight in current_flights:
-                # Create a new Flight instance to avoid pointer corruption
-                new_flight = Flight(
-                    id=flight.getValue(),
-                    origin=flight.getOrigin(),
-                    destiny=flight.getDestiny(),
-                    departureTime=flight.getDepartureTime(),
-                    basePrice=flight.getBasePrice(),
-                    finalPrice=flight.getFinalPrice(),
-                    passengers=flight.getPassengers(),
-                    promotion=flight.getPromotion(),
-                    alert=flight.getAlert()
-                )
-                self._tree.insert(new_flight)
+            self._tree._root = root_clone
             
             # Apply depth penalty if set
             if self._max_depth:
