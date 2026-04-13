@@ -1,3 +1,5 @@
+"""AVL tree implementation specialized for flight nodes."""
+
 from App.Models.BST import BST
 
 

@@ -1,3 +1,6 @@
+"""LIFO stack structure used to keep undo history."""
+
+
 class Stack:
     """Simple LIFO stack implementation used for undo history."""
 

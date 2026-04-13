@@ -1,3 +1,5 @@
+"""Application factory helpers for the SkyBalance package."""
+
 from flask import Flask
 from App.routes import main_routes
 

@@ -1,6 +1,5 @@
-import os
-import json
-import re
+"""Main Flask routes for flight management, tree visualization, and metrics."""
+
 from flask import Blueprint, request, jsonify
 from App.Services.Flight_Service import Flight_Service
 from App.Models.Flight import Flight
@@ -8,41 +7,16 @@ from datetime import datetime
 from App.Services.Metrics_Service import Metrics_Service
 from App.Utils.Tree_Render import TreeRenderer
 from App.Utils.JSON_Handler import JSONHandler
+from App.Utils.id_utils import normalize_flight_id as _normalize_flight_id
 from App.Models.Stack import Stack
 from App.Models.Flight import Flight as flight_model
 
-# Create an instance of the Flight_Service and Metrics_Service.
-# These will stay in memory while the Flask application is running.
+# Keep the service instances in memory while the Flask app is running.
 flight_service = Flight_Service()
 metrics_service = Metrics_Service(flight_service)
 
-# Create a Flask blueprint to group the application's API routes.
+# Group the main application routes in a dedicated blueprint.
 main_routes = Blueprint("main", __name__)
-
-
-def _normalize_flight_id(raw_id):
-    """Normalize IDs so tree comparisons always use integers.
-
-    Accepts values like 400, "400" or "SB400" and returns 400.
-    """
-    if raw_id is None:
-        raise ValueError("Flight ID is required")
-
-    if isinstance(raw_id, (int, float)):
-        return int(raw_id)
-
-    raw_text = str(raw_id).strip()
-    if not raw_text:
-        raise ValueError("Flight ID is required")
-
-    if raw_text.isdigit():
-        return int(raw_text)
-
-    match = re.search(r"(\d+)$", raw_text)
-    if match:
-        return int(match.group(1))
-
-    raise ValueError(f"Invalid flight ID format: {raw_id}")
 
 
 def _build_flight_from_payload(data):

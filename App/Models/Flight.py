@@ -1,3 +1,6 @@
+"""Flight entity that also acts as a node inside tree structures."""
+
+
 class Flight:
     """
     Flight class representing a flight node in an AVL tree structure.

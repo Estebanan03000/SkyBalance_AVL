@@ -1,3 +1,5 @@
+"""Core service layer for managing flights and switching tree strategies."""
+
 from App.Models.Flight import Flight
 from App.Models.AVL import AVL
 from App.Models.Stack import Stack

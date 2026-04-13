@@ -1,19 +1,16 @@
-"""
-Additional endpoints para SkyBalance_AVL
-Se importan en app.py con: from App.routes_endpoints import additional_routes
-"""
+"""Additional Flask endpoints for mode switching, validation, and queue actions."""
 
 from flask import Blueprint, request, jsonify
 from App.Models.Flight import Flight
-import re
+from App.Utils.id_utils import normalize_flight_id as _normalize_flight_id
 
 additional_routes = Blueprint("additional", __name__)
 
-# Esta función necesita recibir flight_service desde app.py
+# This reference is injected from the application bootstrap process.
 _flight_service = None
 
 def init_endpoints(flight_service):
-    """Inicializar endpoints con referencia a flight_service"""
+    """Initialize endpoint helpers with the shared flight service instance."""
     global _flight_service
     _flight_service = flight_service
 
@@ -27,27 +24,6 @@ def _get_flight_service():
     except Exception:
         return _flight_service
 
-
-def _normalize_flight_id(raw_id):
-    """Normalize IDs to int for tree comparisons (e.g. 800, "800", "SB800")."""
-    if raw_id is None:
-        raise ValueError("Flight ID is required")
-
-    if isinstance(raw_id, (int, float)):
-        return int(raw_id)
-
-    raw_text = str(raw_id).strip()
-    if not raw_text:
-        raise ValueError("Flight ID is required")
-
-    if raw_text.isdigit():
-        return int(raw_text)
-
-    match = re.search(r"(\d+)$", raw_text)
-    if match:
-        return int(match.group(1))
-
-    raise ValueError(f"Invalid flight ID format: {raw_id}")
 
 
 # ===============================

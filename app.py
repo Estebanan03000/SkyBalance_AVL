@@ -1,3 +1,5 @@
+"""Application entry point for the SkyBalance web interface and API."""
+
 from flask import Flask
 from App.routes import main_routes
 from App.routes_endpoints import additional_routes, init_endpoints

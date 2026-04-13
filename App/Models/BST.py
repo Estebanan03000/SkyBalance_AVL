@@ -1,3 +1,5 @@
+"""Binary search tree implementation used by the SkyBalance project."""
+
 from App.Models.Flight import Flight
 from App.Models.Queue import Queue
 
@@ -364,16 +366,20 @@ class BST:
             )
             left_key = data.get("left") or data.get("izquierdo")
             right_key = data.get("right") or data.get("derecho")
-            flight.setLeftChild(build_node(left_key))
-            flight.setRightChild(build_node(right_key))
+
+            left_child = build_node(left_key)
+            right_child = build_node(right_key)
+
+            flight.setLeftChild(left_child)
+            flight.setRightChild(right_child)
 
             # If left child exists, assign this node as its parent
-            if flight.getLeftChild():
-                flight.getLeftChild().setParent(flight)
+            if left_child is not None:
+                left_child.setParent(flight)
 
             # If right child exists, assign this node as its parent
-            if flight.getRightChild():
-                flight.getRightChild().setParent(flight)
+            if right_child is not None:
+                right_child.setParent(flight)
 
             # Return the constructed node
             return flight

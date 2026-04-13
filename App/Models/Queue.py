@@ -1,3 +1,6 @@
+"""FIFO queue structure used by breadth-first operations and staged inserts."""
+
+
 class Queue:
     """Simple FIFO queue implementation used for sequential flight inserts."""
 

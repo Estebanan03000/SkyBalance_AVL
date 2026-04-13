@@ -1,3 +1,5 @@
+"""Render AVL and BST structures as images for the frontend."""
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import base64

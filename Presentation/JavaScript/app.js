@@ -1,3 +1,4 @@
+// Client-side controller for the SkyBalance interface.
 const apiBase = "";
 
 // Single JSON load flow (format auto-detected by backend)
