@@ -149,6 +149,7 @@ async function refreshView() {
  * Load the default local JSON file on the server and refresh the view.
  */
 async function loadJson() {
+    selectors.jsonInput.value = "";
     selectors.jsonInput.click();
 }
 
