@@ -169,12 +169,24 @@ async function saveJson() {
     try {
         const filename = prompt("Filename to save", "tree_export.json");
         if (!filename) return;
-        const payload = await request("/tree/export", {
+
+        const response = await fetch("/tree/export", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ filename }),
         });
-        alert(payload.message);
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a); // opcional pero más seguro
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
     } catch (error) {
         alert(error.message);
     }
@@ -186,17 +198,28 @@ async function saveJson() {
 async function versionJson() {
     try {
         const filename = `tree_version_${Date.now()}.json`;
-        const payload = await request("/tree/export", {
+
+        const response = await fetch("/tree/export", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ filename }),
         });
-        alert(payload.message);
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
     } catch (error) {
         alert(error.message);
     }
 }
-
 /**
  * Open the hidden file input to upload a JSON file.
  */
