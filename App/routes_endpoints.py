@@ -256,6 +256,30 @@ def undo_operation():
     except Exception as e:
         return jsonify({"error": f"❌ Error en undo: {str(e)}"}), 400
 
+@additional_routes.route("/tree/redo", methods=["POST"])
+def redo_operation():
+    """
+    Redo the last undone tree operation (insertion or deletion).
+    """
+    try:
+        flight_service = _get_flight_service()
+        result = flight_service.redo()
+        
+        if result:
+            operation, flight_id = result
+            return jsonify({
+                "message": f"✅ Operación '[{operation}] Vuelo {flight_id}' rehacía",
+                "operation": operation,
+                "flight_id": flight_id
+            }), 200
+        else:
+            return jsonify({
+                "message": "⚠️ No hay operaciones para rehacer",
+                "operation": None,
+                "flight_id": None
+            }), 200
+    except Exception as e:
+        return jsonify({"error": f"❌ Error en redo: {str(e)}"}), 400
 
 # ===============================
 # POST /tree/cancel-subtree - Cancel (delete) a subtree

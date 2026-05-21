@@ -30,6 +30,7 @@ class Flight_Service:
         Initializes the Flight_Service with an empty AVL tree and an empty Stack to undo operations
         """
         self._history = Stack()
+        self._redo_stack = Stack()  # Stack to support redo operations
         self._mode = mode
         self._max_depth = None  # It is configured before loading the JSON
         self._versions = {}
@@ -251,7 +252,7 @@ class Flight_Service:
             The Flight object to be inserted into the tree.
         """
         self._tree.insert(flight)
-        self._history.push(("delete", flight.getValue()))
+        self._history.push(("delete", flight))
         self.applyDepthPenalty()  # the new flight could cause depth changes, so we recalculate penalties after each insertion
 
     # READ (single flight)
@@ -375,15 +376,16 @@ class Flight_Service:
     def undo(self):
         while not self._history.is_empty():
             action = self._history.pop()
+            self._redo_stack.push(action)
             action_type = action[0] if isinstance(action, tuple) and len(action) > 0 else None
 
             if action_type == "delete":
-                # Stored as ("delete", flight_id) to undo an insertion.
-                flight_id = action[1] if len(action) > 1 else None
-                if flight_id is None:
+                # Stored as ("delete", flight_obj) to undo an insertion.
+                flight = action[1] if len(action) > 1 else None
+                if flight is None or not hasattr(flight, "getValue"):
                     continue
-                self._tree.delete(flight_id)
-                return ("delete", flight_id)
+                self._tree.delete(flight.getValue())
+                return ("delete", flight.getValue())
 
             if action_type == "insert":
                 # Stored as ("insert", flight_obj) to undo a deletion.
@@ -413,6 +415,49 @@ class Flight_Service:
                 return ("update", flight_id)
 
         raise Exception("No hay operaciones válidas para deshacer")
+
+    def redo(self):
+        while not self._redo_stack.is_empty():
+            action = self._redo_stack.pop()
+            self._history.push(action)
+            action_type = action[0] if isinstance(action, tuple) and len(action) > 0 else None
+
+            if action_type == "delete":
+                flight = action[1] if len(action) > 1 else None
+                if flight is None or not hasattr(flight, "getValue"):
+                    continue
+                self._tree.insert(flight)  # Reinsert the flight object to redo the insertion
+                return ("insert", flight.getValue())
+
+            if action_type == "insert":
+                flight = action[1] if len(action) > 1 else None
+                if flight is None or not hasattr(flight, "getValue"):
+                    continue
+                self._tree.delete(flight.getValue())  # Delete the flight to redo the deletion
+                return ("delete", flight.getValue())
+
+            if action_type == "update":
+                if len(action) < 3:
+                    continue
+                flight_id, old_values = action[1], action[2]
+                flight = self.get_flight(flight_id)
+                if flight:
+                    # Redo the update by reapplying the old values (which are actually the new values in this context)
+                    if "origin" in old_values:
+                        flight.setOrigin(old_values["origin"])
+                    if "destiny" in old_values:
+                        flight.setDestiny(old_values["destiny"])
+                    if "basePrice" in old_values:
+                        flight.setBasePrice(old_values["basePrice"])
+                    if "finalPrice" in old_values:
+                        flight.setFinalPrice(old_values["finalPrice"])
+                    if "passengers" in old_values:
+                        flight.setPassengers(old_values["passengers"])
+                return ("update", flight_id)
+
+        raise Exception("No hay operaciones válidas para rehacer")
+        
+
 
     def multi_inserts(self, flights_list):
         """

@@ -39,7 +39,19 @@ const selectors = {
     queueStatus: document.getElementById("queue-status"),
     maxDepthInput: document.getElementById("max-depth-input"),
     setMaxDepth: document.getElementById("set-max-depth"),
+    redo: document.getElementById("redo-action")
 };
+
+async function redoAction() {
+    try {
+        const payload = await request("/tree/redo", { method: "POST" });
+        alert(payload.message);
+        refreshView();
+        console.log("Redo successful:", payload);
+    } catch (error) {
+        alert(error.message);
+    }
+}
 
 async function setMaxDepth() {
     const depth = Number(selectors.maxDepthInput.value);
@@ -638,6 +650,7 @@ function attachEvents() {
     selectors.traverseInorder.addEventListener("click", () => traverse("INORDER"));
     selectors.traversePostorder.addEventListener("click", () => traverse("POSTORDER"));
     selectors.setMaxDepth.addEventListener("click", setMaxDepth);
+    selectors.redo.addEventListener("click", redoAction);
 }
 
 window.addEventListener("DOMContentLoaded", () => {
